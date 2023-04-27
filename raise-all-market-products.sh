@@ -3,6 +3,14 @@
 # Usage: raise-all-market-products.sh <version>
 #
 
+# repos that are under heavy maintenance by LTS driven projects
+lts_repos=(
+  "persistence-utils"
+  "docuware-connector"
+  "successfactors-connector"
+  "talentLink-connector"
+)
+
 ignored_repos=(
   "market-up2date-keeper"
   "market"
@@ -54,7 +62,7 @@ migrateListOfRepos() {
 
 migrateRepo() {
   repo=$1
-  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]]; then
+  if [[ " ${ignored_repos[@]} " =~ " ${repo} " || " ${lts_repos[@]} " =~ " ${repo} " ]]; then
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"

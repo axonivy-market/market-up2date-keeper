@@ -16,33 +16,43 @@ ignored_repos=(
   "demo-projects"
 )
 
-workflow_file=".github/workflows/release-drafter.yml"
-workflow_content="name: Release Drafter
+workflow_file_release_drafter=".github/workflows/release-drafter.yml"
+workflow_content_release_drafter="name: Release Drafter
+
 on:
   push:
     branches:
       - master
   pull_request:
     types: [opened, reopened, synchronize]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version'
-        required: true
-      prerelease:
-        description: 'Is this a prerelease?'
-        required: false
-        default: false
-        type: boolean
+
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
   build:
-    uses: axonivy-market/github-workflows/.github/workflows/release-drafter.yml@v4
-    with:
-      version: \${{ github.event.inputs.version }}
-      prerelease: \${{ github.event.inputs.prerelease }}"
+    uses: axonivy-market/github-workflows/.github/workflows/release-drafter.yml@v4"
+
+workflow_file_publish_release=".github/workflows/publish_release.yml"
+workflow_content_publish_release="name: Publish Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  build:
+    uses: axonivy-market/github-workflows/.github/workflows/publish-release.yml@v4
+    # The 'publish_release' input parameter is used to control whether the release should be published automatically.
+    # Uncomment and set to 'false' if you want to prevent the release from being published immediately.
+    # with:
+    #   publish_release: false"
 
 githubRepos() {
   ghApi="orgs/${org}/repos?per_page=100"
@@ -93,7 +103,6 @@ create_pr() {
   # Define branch and PR variables
   branch_name="feature/MARP-620-Add-release-drafter-workflow"
   pr_title="MARP-620 Add release-drafter workflow"
-  workflow_path=".github/workflows/release-drafter.yml"
 
   if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
     echo "Branch $branch_name already exists in $repo_name"
@@ -104,9 +113,12 @@ create_pr() {
 
   # Always override the existing workflow file with new content
   mkdir -p .github/workflows
-  echo "$workflow_content" > "$workflow_path"
-  git add "$workflow_path"
-  git commit -m "Update release-drafter workflow"
+  echo "$workflow_content_release_drafter" > "$workflow_file_release_drafter"
+  git add "$workflow_file_release_drafter"
+
+  echo "$workflow_content_publish_release" > "$workflow_file_publish_release"
+  git add "$workflow_file_publish_release"
+  git commit -m "Add publish-release workflow and update release-drafter workflow"
 
   git push origin "$branch_name"
 

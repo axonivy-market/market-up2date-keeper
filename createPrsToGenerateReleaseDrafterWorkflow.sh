@@ -117,8 +117,10 @@ create_pr() {
   git add "$workflow_file_release_drafter"
 
   # Delete old workflow file if it exists
-  if [ -f ".github/workflows/publish_release.yml" ]; then
-    rm ".github/workflows/publish_release.yml"
+  old_workflow_file_publish_release=".github/workflows/publish_release.yml"
+  if [ -f "$old_workflow_file_publish_release" ]; then
+    rm "$old_workflow_file_publish_release"
+    git add "$old_workflow_file_publish_release"
   fi
   
   echo "$workflow_content_publish_release" > "$workflow_file_publish_release"

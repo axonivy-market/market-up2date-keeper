@@ -34,13 +34,13 @@ jobs:
   build:
     uses: axonivy-market/github-workflows/.github/workflows/release-drafter.yml@v4"
 
-workflow_file_publish_release=".github/workflows/publish_release.yml"
+workflow_file_publish_release=".github/workflows/publish-release.yml"
 workflow_content_publish_release="name: Publish Release
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - \"v*.*.*\"
 
 permissions:
   contents: write
@@ -116,6 +116,11 @@ create_pr() {
   echo "$workflow_content_release_drafter" > "$workflow_file_release_drafter"
   git add "$workflow_file_release_drafter"
 
+  # Delete old workflow file if it exists
+  if [ -f ".github/workflows/publish_release.yml" ]; then
+    rm ".github/workflows/publish_release.yml"
+  fi
+  
   echo "$workflow_content_publish_release" > "$workflow_file_publish_release"
   git add "$workflow_file_publish_release"
   git commit -m "Add publish-release workflow and update release-drafter workflow"

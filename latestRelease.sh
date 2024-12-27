@@ -19,8 +19,8 @@ showLatestRelease() {
   repo="$1"
   releases="repos/${org}/${repo}/releases/latest"
   tags="repos/${org}/${repo}/tags"
-  latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "none"')
-  latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "none"')
+  latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
+  latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
   echo "$latestTag;$latestRelease"
 }
 

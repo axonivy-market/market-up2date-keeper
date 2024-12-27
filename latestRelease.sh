@@ -31,7 +31,7 @@ checkFileStatus() {
   for path in "${filePaths[@]}"; do
     fileStatus=$(gh api "repos/${org}/${repo}/contents/${path}" 2> /dev/null | jq -r '.content // "missing"')
     if [ "$fileStatus" != "missing" ]; then
-      echo "$path"
+      echo "Present(source $path)"
       return
     fi
   done

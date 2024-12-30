@@ -1,4 +1,4 @@
-name: Latest CSV
+name: Latest status report
 on: 
   workflow_dispatch:
   schedule:
@@ -6,17 +6,17 @@ on:
 
 jobs:
   build:
-    name: Latest CSV
+    name: Checking status for market products
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Write CSV
-      run:  ./latestRelease.sh | tee releases_$(date '+%Y%m%d_%H%M').csv
+      run:  ./latestRelease.sh | tee MarketUp2DateStatus_$(date '+%Y%m%d_%H%M').csv
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: MarketReleases
-        path: releases_*.csv
+        name: MarketUp2DateStatus
+        path: MarketUp2DateStatus_*.csv

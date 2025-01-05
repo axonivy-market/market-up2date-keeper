@@ -117,7 +117,7 @@ create_pr() {
 
   # Define branch and PR variables
   branch_name="feature/MARP-1053-Update-release-drafter-and-publisher-workflows"
-  pr_title="MARP-1053 Add release-drafter and release-publisher workflows"
+  pr_title="MARP-1053 Update release-drafter and release-publisher workflows"
 
   if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
     echo "Branch $branch_name already exists in $repo_name"

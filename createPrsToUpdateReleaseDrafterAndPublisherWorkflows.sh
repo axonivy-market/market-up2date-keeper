@@ -108,7 +108,7 @@ fetch_raw_file() {
   local repo="$2"
   local file_path="$3"
 
-  gh api repos/$org/$repo/contents/$file_path?ref=feature/MARP-1053-Update-publish-release-template \
+  gh api repos/$org/$repo/contents/$file_path \
     -H "Accept: application/vnd.github.v3.raw"
 }
 

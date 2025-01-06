@@ -24,13 +24,25 @@ create_label_if_not_exists() {
   fi
 }
 
+delete_files() {
+  local files=("$@")
+  for file in "${files[@]}"; do
+    if [ -f "$file" ]; then
+      echo "Deleting $file"
+      git rm "$file"
+    else
+      echo "$file not found, skipping."
+    fi
+  done
+}
+
 process_branch() {
   local repo_name="$1"
   local branch_name="$2"
   local base_branch="$3"
 
   echo "Processing branch $branch_name in repository $repo_name"
-
+  git checkout "$base_branch"
   if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
     echo "Branch $branch_name already exists in $repo_name"
     git checkout "$branch_name"
@@ -45,13 +57,15 @@ process_branch() {
   echo "$workflow_content_publish_release_drafter" > .github/workflows/publish-release-drafter.yml
   git add .github/workflows/publish-release-drafter.yml
 
+  delete_files ".github/workflows/publish-release.yml"
+
   git commit -m "Update workflows for branch $branch_name"
   git push origin "$branch_name"
 
   local pr_id=$(gh pr list --head "$branch_name" --base "$base_branch" --json number --jq '.[0].number')
   if [ -z "$pr_id" ]; then
     echo "Creating a pull request"
-    gh pr create --title "MARP-1053: Update workflows for branch $branch_name" --body "This PR updates the workflows for branch $branch_name." --base "$base_branch" --head "$branch_name"
+    gh pr create --title "MARP-1053: Update release drafter and publisher workflows for branch $base_branch" --body "" --base "$base_branch" --head "$branch_name"
   else
     echo "Pull request already exists for branch $branch_name"
   fi
@@ -76,10 +90,10 @@ create_pr() {
   for base_branch in $branches; do
     local branch_name=""
     if [[ $base_branch == "master" ]]; then
-      branch_name="feature/MARP-1053"
+      branch_name="feature/MARP-1053-Update-release-drafter-and-publisher-workflows"
     else
       local release_version=$(echo "$base_branch" | sed 's|release/||')
-      branch_name="feature/${release_version}/MARP-1053"
+      branch_name="feature/${release_version}/MARP-1053-Update-release-drafter-and-publisher-workflows"
     fi
 
     process_branch "$repo_name" "$branch_name" "$base_branch"
@@ -100,13 +114,9 @@ fetch_raw_file() {
 
 main() {
   echo "====== Starting script ======"
-  collectRepos | sed '/^$/d' | while read -r repo_name; do
-    if [ "$repo_name" == "open-weather-connector" ]; then
-      create_label_if_not_exists "$repo_name"
-      create_pr "$repo_name"
-    else
-      echo "Skipping repository: $repo_name"
-    fi
+  collectRepos | while read -r repo_name; do
+    create_label_if_not_exists "$repo_name"
+    create_pr "$repo_name"
   done
   echo "====== End script ======"
 }

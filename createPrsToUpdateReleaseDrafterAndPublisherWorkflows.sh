@@ -119,7 +119,7 @@ fetch_raw_file() {
 
 main() {
   echo "====== Starting script ======"
-  collectRepos | while read -r repo_name; do
+  collectRepos | sed '/^$/d' | while read -r repo_name; do
     create_label_if_not_exists "$repo_name"
     create_pr "$repo_name"
   done

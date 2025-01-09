@@ -74,6 +74,11 @@ process_branch() {
 create_pr() {
   local repo_name="$1"
 
+  if [[ " ${ignored_repos[@]} " =~ " ${repo_name} " ]]; then
+    echo "Ignoring repo ${repo_name}"
+    return
+  fi
+
   git clone "https://github.com/${org}/${repo_name}.git"
   cd "${repo_name}"
 

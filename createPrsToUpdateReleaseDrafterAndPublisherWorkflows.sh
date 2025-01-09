@@ -59,13 +59,13 @@ process_branch() {
 
   delete_files ".github/workflows/publish-release.yml"
 
-  git commit -m "Update workflows for branch $branch_name"
+  git commit -m "MARP-1053 Update release drafter workflows for branch $base_branch"
   git push origin "$branch_name"
 
   local pr_id=$(gh pr list --head "$branch_name" --base "$base_branch" --json number --jq '.[0].number')
   if [ -z "$pr_id" ]; then
     echo "Creating a pull request"
-    gh pr create --title "MARP-1053: Update release drafter and publisher workflows for branch $base_branch" --body "" --base "$base_branch" --head "$branch_name"
+    gh pr create --title "MARP-1053 Update release drafter and publisher workflows for branch $base_branch" --body "" --base "$base_branch" --head "$branch_name"
   else
     echo "Pull request already exists for branch $branch_name"
   fi

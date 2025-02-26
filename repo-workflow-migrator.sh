@@ -32,10 +32,8 @@ collectRepos | while read -r repo_name; do
   fi
 
   # Cloning repository to local
-  if ! [ -d "${repo_name}" ]; then
-    echo "Clone repo ${repo_name}"
-    gh repo clone "https://github.com/${org}/${repo_name}"
-  fi
+  echo "Clone repo ${repo_name}"
+  gh repo clone "https://github.com/${org}/${repo_name}"
 
   # Create new branch
   cd "${repo_name}"
@@ -46,5 +44,3 @@ collectRepos | while read -r repo_name; do
   pushAndCreatePR
   cd ..
 done
-
-

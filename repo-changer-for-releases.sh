@@ -48,6 +48,7 @@ changeForReleaseForSingleRepo() {
   if [ -z "$release_branches" ]; then
     echo "❌ No release/* branch found for ${repo_name}, skipping"
     cd ..
+    rm -rf "${repo_name}"
     return
   fi
 

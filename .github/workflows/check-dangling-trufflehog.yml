@@ -1,0 +1,72 @@
+name: Checking dangling commits by Trufflehog
+
+on:
+  workflow_dispatch:
+    inputs:
+      dryRun:
+        description: 'Only log issues without failing or pushing'
+        default: 'true'
+      workingOrgs:
+        description: 'Comma-separated orgs to scan'
+        default: 'axonivy-market'
+      workingRepos:
+        description: 'Comma-separated list of repo names (optional)'
+        default: ''
+
+jobs:
+  truffle-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (for workflow context)
+        uses: actions/checkout@v4
+
+      - name: Authenticate
+        run: echo "${{ github.token }}" | gh auth login --with-token
+
+      - name: Install TruffleHog
+        run: pip install trufflehog
+
+      - name: Prepare inputs
+        id: prep
+        run: |
+          echo "DRY_RUN=${{ github.event.inputs.dryRun || 'true' }}" >> $GITHUB_ENV
+          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
+          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
+
+      - name: Run TruffleHog scanning
+        run: |
+          IFS=',' read -ra ORG_LIST <<< "$ORGS"
+
+          for ORG in "${ORG_LIST[@]}"; do
+            echo "🔍 Fetching repos from $ORG"
+
+            if [ -n "$REPOS" ]; then
+              IFS=',' read -ra REPO_LIST <<< "$REPOS"
+            else
+              mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
+            fi
+
+            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
+            for REPO in "${REPO_LIST[@]}"; do
+              echo "🚨 Scanning $ORG/$REPO ..."
+               rm -rf "$REPO"
+              REPO_URL="https://github.com/$ORG/$REPO.git"
+              REPORT="trufflehog-reports/${ORG}__${REPO}.json"
+
+              mkdir -p trufflehog-reports
+
+              if [ "$DRY_RUN" == "true" ]; then
+                trufflehog --json "$REPO_URL" > "$REPORT" || true
+              else
+                trufflehog --json "$REPO_URL" --fail > "$REPORT"
+              fi
+            done
+          done
+          echo "✅ TruffleHog scanning complete!"
+
+      - name: Upload TruffleHog Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: trufflehog-reports
+          path: trufflehog-reports/

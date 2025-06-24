@@ -16,23 +16,15 @@ on:
 jobs:
   truffle-scan:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout (for workflow context)
         uses: actions/checkout@v4
 
-      - name: Authenticate
-        run: echo "${{ github.token }}" | gh auth login --with-token
-
       - name: Install TruffleHog
         run: pip install trufflehog
-
-      - name: Prepare inputs
-        id: prep
-        run: |
-          echo "DRY_RUN=${{ github.event.inputs.dryRun || 'true' }}" >> $GITHUB_ENV
-          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
-          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
 
       - name: Run TruffleHog scanning
         run: |

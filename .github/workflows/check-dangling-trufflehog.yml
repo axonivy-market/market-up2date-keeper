@@ -3,9 +3,6 @@ name: Checking dangling commits by Trufflehog
 on:
   workflow_dispatch:
     inputs:
-      dryRun:
-        description: 'Only log issues without failing or pushing'
-        default: 'true'
       workingOrgs:
         description: 'Comma-separated orgs to scan'
         default: 'axonivy-market'
@@ -20,7 +17,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
 
     steps:
-      - name: Checkout (for workflow context)
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install TruffleHog
@@ -47,12 +44,7 @@ jobs:
               REPORT="trufflehog-reports/${ORG}__${REPO}.json"
 
               mkdir -p trufflehog-reports
-
-              if [ "$DRY_RUN" == "true" ]; then
-                trufflehog --json "$REPO_URL" > "$REPORT" || true
-              else
-                trufflehog --json "$REPO_URL" --fail > "$REPORT"
-              fi
+              trufflehog --json "$REPO_URL" > "$REPORT" || true
             done
           done
           echo "✅ TruffleHog scanning complete!"

@@ -27,9 +27,56 @@ jobs:
           tar -xzf gitleaks.tar.gz
           chmod +x gitleaks
           sudo mv gitleaks /usr/local/bin/
-      
-      - name: Run Gitleaks Scanning
-        run: ./check-dangling-commits.sh
+
+      - name: Prepare inputs
+        id: prep
+        run: |
+          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
+          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
+
+      - name: Run Gitleaks scanning
+        run: |
+          IFS=',' read -ra ORG_LIST <<< "$ORGS"
+          mkdir -p gitleaks-reports
+        
+          for ORG in "${ORG_LIST[@]}"; do
+            echo "🔍 Fetching repos from $ORG"
+
+            if [ -n "$REPOS" ]; then
+              IFS=',' read -ra REPO_LIST <<< "$REPOS"
+            else
+              mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
+            fi
+
+            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
+
+            for REPO in "${REPO_LIST[@]}"; do
+              echo "🚨 Scanning $ORG/$REPO ..."
+              rm -rf "$REPO"
+              if ! git clone https://x-access-token:${GITHUB_TOKEN}@github.com/$ORG/$REPO.git; then
+                echo "❌ Failed to clone $ORG/$REPO. Skipping..."
+                continue
+              fi
+              cd "$REPO"
+
+              TEMP_REPORT="../gitleaks-reports/tmp-${ORG}__${REPO}.json"
+              FINAL_REPORT="../gitleaks-reports/${ORG}__${REPO}.json"
+              gitleaks detect --source="$REPO" --report-path="$TEMP_REPORT" \
+                --report-format=json --redact || true
+
+              if [ -s "$TEMP_REPORT" ] && [ "$(jq length "$TEMP_REPORT")" -gt 0 ]; then
+                mv "$TEMP_REPORT" "$FINAL_REPORT"
+                echo "✅ Report saved for $ORG/$REPO"
+              else
+                echo "ℹ️ No secrets found in $ORG/$REPO, skipping report"
+                rm -f "$TEMP_REPORT"
+              fi
+
+              cd ..
+              rm -rf "$REPO"
+            done
+          done
+          echo "✅ Secret scanning complete!"
 
       - name: Upload Gitleaks Reports
         uses: actions/upload-artifact@v4

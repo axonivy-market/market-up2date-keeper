@@ -1,5 +1,7 @@
 name: Checking dangling commits by Gitleaks
 
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -13,8 +15,6 @@ on:
 jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout

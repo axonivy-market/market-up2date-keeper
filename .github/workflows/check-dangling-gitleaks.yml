@@ -15,7 +15,8 @@ on:
 jobs:
   gitleaks-scan:
     runs-on: ubuntu-latest
-
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

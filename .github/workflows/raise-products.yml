@@ -19,10 +19,10 @@ on:
         description: 'Project Build Plugin Version'
         required: true
         default: '13.1.1'
-      testerVersion:
-        description: 'Tester Version'
+      backupReleaseBranch:
+        description: 'Create a release branch for LTS'
         required: true
-        default: '13.1.0'
+        default: 'release/12.0'
 
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
           export engineUrl=${{ inputs.engineUrl }}
           export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
-          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }} ${{ inputs.projectBuildPluginVersion }} ${{ inputs.testerVersion }} 
+          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }} ${{ inputs.projectBuildPluginVersion }} ${{ inputs.testerVersion }} ${{ inputs.backupReleaseBranch }}
         shell: bash
 
       - name: Show migrated repositories

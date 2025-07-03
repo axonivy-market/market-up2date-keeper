@@ -41,6 +41,16 @@ updateActions() {
   git commit -m "Update workflow actions to ${tag}"
 }
 
+backupReleaseBranch() {
+  branch="${5}"
+  if git ls-remote --heads origin "$branch" | grep -q "$branch"; then
+    echo "Branch $branch already exists in $repo_name"
+  else
+    git checkout -b "$branch"
+    git push --set-upstream origin $branch
+  fi
+}
+
 push() {
   has_unpushed_commits=$(git log --branches --not --remotes)
   if [ -z "$has_unpushed_commits" ]; then
@@ -59,6 +69,7 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
+backupReleaseBranch
 branch="raise-to-${convert_to_version}"
 git switch -c $branch
 

@@ -8,13 +8,21 @@ on:
         description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
       version:
-        description: 'Snaphsot version to raise (e.g. "12.0.0-SNAPSHOT")'
+        description: 'Snaphsot version to raise (e.g. "13.1.1-SNAPSHOT")'
         required: true
-        default: '12.0.0-SNAPSHOT'
+        default: '13.1.1-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/12.0.0/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/13.1.1/axonivy-engine.zip'
+      projectBuildPluginVersion:
+        description: 'Project Build Plugin Version'
+        required: true
+        default: '13.1.1'
+      testerVersion:
+        description: 'Tester Version'
+        required: true
+        default: '13.1.0'
 
 
 jobs:
@@ -45,7 +53,7 @@ jobs:
           export engineUrl=${{ inputs.engineUrl }}
           export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
-          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
+          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }} ${{ inputs.projectBuildPluginVersion }} ${{ inputs.testerVersion }} 
         shell: bash
 
       - name: Show migrated repositories

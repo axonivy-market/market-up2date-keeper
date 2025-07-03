@@ -17,12 +17,12 @@ fi
 
 convert_to_version=$1
 if [ -z "$convert_to_version" ]; then
-  echo "Missing target version parameter e.g 9.4.0-SNAPSHOT"
+  echo "Missing target version parameter e.g 13.1.1-SNAPSHOT"
   exit 1
 fi
 
 if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
-  echo "Version must be SNAPSHOT e.g 9.4.0-SNAPSHOT"
+  echo "Version must be SNAPSHOT e.g 13.1.1-SNAPSHOT"
   exit 1
 fi
 
@@ -43,6 +43,8 @@ migrateListOfRepos() {
   showMigratedRepos
 }
 
+projectBuildPluginVersion=$3
+testerVersion=$4
 migrateRepo() {
   cd ${gitDir}
   repo=$1
@@ -50,7 +52,7 @@ migrateRepo() {
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"
-    source "$DIR/repo-migrator.sh"
+    source "$DIR/repo-migrator.sh ${projectBuildPluginVersion} ${testerVersion}"
   fi
   cd $DIR
 }

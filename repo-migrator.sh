@@ -25,8 +25,8 @@ cloneRepo() {
 }
 
 updateMavenVersion() {
-  updateMvnProperty "project.build.plugin.version" "12.0.0"
-  updateMvnProperty "tester.version" "12.0.1"
+  updateMvnProperty "project.build.plugin.version" "${projectBuildPluginVersion}"
+  updateMvnProperty "tester.version" "${testerVersion}"
   artifactVersion $convert_to_version
 
   # commit changes
@@ -35,7 +35,7 @@ updateMavenVersion() {
 }
 
 updateActions() {
-  tag="v5"
+  tag="v6"
   updateWorkflows "${tag}"
   git add .
   git commit -m "Update workflow actions to ${tag}"
@@ -48,7 +48,7 @@ push() {
   else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
-    gh pr create --title "Migrate to 12.0 :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
+    gh pr create --title "Migrate to ${convert_to_version} :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
   fi
 }

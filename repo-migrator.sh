@@ -42,12 +42,12 @@ updateActions() {
 }
 
 backupReleaseBranch() {
-  echo "Create release branch LTS $releaseBranch"
-  if git ls-remote --heads origin "$releaseBranch" | grep -q "$releaseBranch"; then
-    echo "Branch $releaseBranch already exists in $repo_name"
+  echo "Create release branch LTS ${backupReleaseBranch}"
+  if git ls-remote --heads origin "${backupReleaseBranch}" | grep -q "${backupReleaseBranch}"; then
+    echo "Branch ${backupReleaseBranch} already exists in ${repo_name}"
   else
-    git checkout -b "$releaseBranch"
-    git push --set-upstream origin $releaseBranch
+    git checkout -b "${backupReleaseBranch}"
+    git push --set-upstream origin ${backupReleaseBranch}
   fi
 }
 

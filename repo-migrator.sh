@@ -42,13 +42,12 @@ updateActions() {
 }
 
 backupReleaseBranch() {
-  branch=$5
-  echo "Create release branch LTS $branch"
-  if git ls-remote --heads origin "$branch" | grep -q "$branch"; then
-    echo "Branch $branch already exists in $repo_name"
+  echo "Create release branch LTS $releaseBranch"
+  if git ls-remote --heads origin "$releaseBranch" | grep -q "$releaseBranch"; then
+    echo "Branch $releaseBranch already exists in $repo_name"
   else
-    git checkout -b "$branch"
-    git push --set-upstream origin $branch
+    git checkout -b "$releaseBranch"
+    git push --set-upstream origin $releaseBranch
   fi
 }
 
@@ -70,6 +69,7 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
+releaseBranch=$5
 backupReleaseBranch
 branch="raise-to-${convert_to_version}"
 git switch -c $branch

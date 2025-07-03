@@ -42,7 +42,8 @@ updateActions() {
 }
 
 backupReleaseBranch() {
-  branch="${5}"
+  branch=$5
+  echo "Create release branch LTS $branch"
   if git ls-remote --heads origin "$branch" | grep -q "$branch"; then
     echo "Branch $branch already exists in $repo_name"
   else

@@ -52,7 +52,7 @@ migrateRepo() {
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"
-    source "$DIR/repo-migrator.sh ${projectBuildPluginVersion} ${testerVersion}"
+    source "$DIR/repo-migrator.sh"
   fi
   cd $DIR
 }

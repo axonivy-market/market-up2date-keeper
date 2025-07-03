@@ -69,7 +69,6 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
-releaseBranch=$5
 backupReleaseBranch
 branch="raise-to-${convert_to_version}"
 git switch -c $branch

@@ -23,7 +23,12 @@ cloneRepo() {
     gh repo clone "${repo_url}"
   fi
 }
-
+if [ -z "$projectBuildPluginVersion" ]; then
+  engineUrl="13.1.1"
+fi
+if [ -z "$testerVersion" ]; then
+  engineUrl="13.1.1"
+fi
 updateMavenVersion() {
   updateMvnProperty "project.build.plugin.version" "${projectBuildPluginVersion}"
   updateMvnProperty "tester.version" "${testerVersion}"
@@ -40,6 +45,10 @@ updateActions() {
   git add .
   git commit -m "Update workflow actions to ${tag}"
 }
+
+if [ -z "$releaseBranch" ]; then
+  releaseBranch="release/12.0"
+fi
 
 createReleaseBranch() {
   echo "Create release branch ${releaseBranch}"

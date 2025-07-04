@@ -43,10 +43,6 @@ migrateListOfRepos() {
   showMigratedRepos
 }
 
-projectBuildPluginVersion=$3
-testerVersion=$4
-releaseBranch=$5
-
 migrateRepo() {
   cd ${gitDir}
   repo=$1

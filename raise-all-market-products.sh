@@ -45,7 +45,7 @@ migrateListOfRepos() {
 
 projectBuildPluginVersion=$3
 testerVersion=$4
-backupReleaseBranch=$5
+releaseBranch=$5
 
 migrateRepo() {
   cd ${gitDir}

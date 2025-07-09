@@ -15,16 +15,8 @@ on:
         description: 'Axon Ivy Engine URL'
         required: true
         default: 'https://developer.axonivy.com/permalink/13.1.1/axonivy-engine.zip'
-      projectBuildPluginVersion:
-        description: 'Project Build Plugin Version'
-        required: true
-        default: '13.1.1'
-      testerVersion:
-        description: 'Test Version'
-        required: true
-        default: '13.1.1'
       releaseBranch:
-        description: 'Create a release branch to backup source code of the current version (e.g. "release/12.0")'
+        description: 'Create a release branch to backup source code of the current version (e.g. "release/12.0"). This release branch should only be created for LTS versions.'
         required: true
         default: 'release/12.0'
 
@@ -55,8 +47,6 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ inputs.engineUrl }}
-          export projectBuildPluginVersion=${{ inputs.projectBuildPluginVersion }}
-          export testerVersion=${{ inputs.testerVersion }}
           export releaseBranch=${{ inputs.releaseBranch }}
           export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV

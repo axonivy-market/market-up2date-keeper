@@ -23,15 +23,8 @@ cloneRepo() {
     gh repo clone "${repo_url}"
   fi
 }
-if [ -z "$projectBuildPluginVersion" ]; then
-  projectBuildPluginVersion="13.1.1"
-fi
-if [ -z "$testerVersion" ]; then
-  testerVersion="13.1.1"
-fi
+
 updateMavenVersion() {
-  updateMvnProperty "project.build.plugin.version" "${projectBuildPluginVersion}"
-  updateMvnProperty "tester.version" "${testerVersion}"
   artifactVersion $convert_to_version
 
   # commit changes

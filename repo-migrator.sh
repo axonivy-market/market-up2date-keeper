@@ -24,10 +24,10 @@ cloneRepo() {
   fi
 }
 if [ -z "$projectBuildPluginVersion" ]; then
-  engineUrl="13.1.1"
+  projectBuildPluginVersion="13.1.1"
 fi
 if [ -z "$testerVersion" ]; then
-  engineUrl="13.1.1"
+  testerVersion="13.1.1"
 fi
 updateMavenVersion() {
   updateMvnProperty "project.build.plugin.version" "${projectBuildPluginVersion}"

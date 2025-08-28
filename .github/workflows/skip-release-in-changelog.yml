@@ -1,0 +1,40 @@
+name: Skip release PR from bot in changelog
+
+on:
+  workflow_dispatch:
+
+jobs:
+  label-release-prs:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Find PRs and add label
+        env:
+          ORG: axonivy-market
+        run: |
+          repos=$(gh repo list $ORG --json name --jq '.[].name' --limit 1000)
+          for repo in $repos; do
+            echo "🔍 Checking repo: $repo"
+            prs=$(gh pr list \
+              --repo "$ORG/$repo" \
+              --state all \
+              --search "Release in:title author:github-actions[bot]" \
+              --limit 1000 \
+              --json number,labels,state \
+              --jq '.[] | select((.state=="OPEN" or .state=="MERGED") and ([.labels[].name] | index("skip-changelog") | not)) | .number')
+
+            filtered=$(echo "$prs" | jq -r '.[] | select(.state=="OPEN" or .state=="MERGED") | @base64')
+
+            for pr in $filtered; do
+              _jq() { echo $pr | base64 --decode | jq -r $1; }
+              number=$(_jq '.number')
+              labels=$(_jq '.labels[].name')
+
+              if ! echo "$labels" | grep -q "skip-changelog"; then
+                gh pr edit $number --repo "$ORG/$repo" --add-label "skip-changelog"
+              fi
+            done
+          done

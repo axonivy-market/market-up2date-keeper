@@ -21,7 +21,7 @@ addWeblateComponent() {
         \"filemask\": \"$REPO_NAME-product/README_*.md\",
         \"new_base\": \"\",
         \"new_lang\": \"none\",
-        \"template\": \"README.md\",
+        \"template\": \"$REPO_NAME-product/README.md\",
         \"edit_template\": \"false\",
         \"id_auto_lock_error\": \"false\",
         \"license\": \"Apache-2.0\",

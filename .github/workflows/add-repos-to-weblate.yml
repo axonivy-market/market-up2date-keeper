@@ -1,0 +1,45 @@
+name: Add Repositories to Weblate
+
+on:
+  workflow_dispatch:
+    inputs:
+      connector_name:
+        description: 'Connector name (leave empty for all repos)'
+        required: false
+        default: ''
+        type: string
+      weblate_url:
+        description: 'Weblate URL'
+        required: true
+        default: 'https://hosted.weblate.org'
+        type: string
+      weblate_project:
+        description: 'Weblate Project Slug'
+        required: true
+        default: 'axonivy-marketplace'
+        type: string
+      weblate_token:
+        description: 'Weblate API Token'
+        required: true
+        type: string
+
+jobs:
+  add-to-weblate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Add repositories to Weblate
+        env:
+          CONNECTOR_NAME: ${{ inputs.connector_name }}
+          WEBLATE_URL: ${{ inputs.weblate_url }}
+          WEBLATE_PROJECT: ${{ inputs.weblate_project }}
+          WEBLATE_TOKEN: ${{ inputs.weblate_token }}
+          GITHUB_TOKEN: ${{ secrets.GH }}
+        run: |
+          chmod +x add-repos-to-weblate.sh
+          ./add-repos-to-weblate.sh

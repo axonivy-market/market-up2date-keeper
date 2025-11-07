@@ -7,7 +7,6 @@ WEBLATE_TOKEN="${WEBLATE_TOKEN:-}"
 
 echo "Starting to add repositories to Weblate project: $WEBLATE_PROJECT"
 echo "Using Weblate URL: $WEBLATE_URL"
-echo "Using Connector Name filter: ${CONNECTOR_NAME:-<none>}"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "${DIR}/repo-collector.sh"
@@ -42,9 +41,7 @@ githubReposC | jq -c '.[] |
   fi
 
   echo "Adding repo $REPO_NAME as component..."
-
   addWeblateComponent "$REPO_NAME" "$REPO_URL" "$WEBLATE_URL" "$WEBLATE_TOKEN" "$WEBLATE_PROJECT"
-
   addGithubWebhook "$org" "$REPO_NAME" "$WEBLATE_URL"
 
   if [[ -n "$CONNECTOR_NAME" ]]; then

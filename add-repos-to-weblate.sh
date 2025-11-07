@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONNECTOR_NAME="${CONNECTOR_NAME:-}"
+INPUT_REPO_NAME="${INPUT_REPO_NAME:-}"
 WEBLATE_PROJECT="${WEBLATE_PROJECT:-axonivy-marketplace}"
 WEBLATE_URL="${WEBLATE_URL:-https://hosted.weblate.org}"
 WEBLATE_TOKEN="${WEBLATE_TOKEN:-}"
@@ -27,6 +27,7 @@ githubReposC | jq -c '.[] |
   select(.archived == false) | 
   select(.is_template == false) | 
   select(.default_branch == "master") | 
+  select(.language != null) | 
   {name: .name, url: .html_url}' | while IFS= read -r REPO_DATA; do
   
   REPO_NAME=$(echo "$REPO_DATA" | jq -r '.name')
@@ -36,15 +37,15 @@ githubReposC | jq -c '.[] |
     continue
   fi
 
-  if [[ -n "$CONNECTOR_NAME" && "$REPO_NAME" != "$CONNECTOR_NAME" ]]; then
+  if [[ -n "$INPUT_REPO_NAME" && "$REPO_NAME" != "$INPUT_REPO_NAME" ]]; then
     continue
   fi
-
   echo "Adding repo $REPO_NAME as component..."
   addWeblateComponent "$REPO_NAME" "$REPO_URL" "$WEBLATE_URL" "$WEBLATE_TOKEN" "$WEBLATE_PROJECT"
+
   addGithubWebhook "$org" "$REPO_NAME" "$WEBLATE_URL"
 
-  if [[ -n "$CONNECTOR_NAME" ]]; then
+  if [[ -n "$INPUT_REPO_NAME" ]]; then
     break
   fi
 done

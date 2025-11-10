@@ -25,6 +25,7 @@ addWeblateComponent() {
         \"edit_template\": \"false\",
         \"id_auto_lock_error\": \"false\",
         \"license\": \"Apache-2.0\",
+        \"commit_pending_age\": \"1\",
         \"language_code_style\": \"\",
         \"merge_style\": \"merge\",
         \"source_language\": {

@@ -35,7 +35,7 @@ jobs:
           WEBLATE_URL: ${{ inputs.weblate_url }}
           WEBLATE_PROJECT: ${{ inputs.weblate_project }}
           WEBLATE_TOKEN: ${{ secrets.WEBLATE_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GH }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           chmod +x add-repos-to-weblate.sh
           ./add-repos-to-weblate.sh

@@ -13,51 +13,72 @@ on:
         default: ''
 
 jobs:
-  truffle-scan:
+  prepare:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ github.token }}
+    outputs:
+      repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install TruffleHog
-        run: pip install trufflehog
-
-      - name: Prepare inputs
-        id: prep
+      - name: Generate matrix dynamically
+        id: set-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
-          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
+          ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
+          INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
 
-      - name: Run TruffleHog scanning
-        run: |
-          IFS=',' read -ra ORG_LIST <<< "$ORGS"
+          echo "🔍 Org: $ORG"
+          echo "🔍 User Repo Input: '$INPUT_REPOS'"
 
-          for ORG in "${ORG_LIST[@]}"; do
-            echo "🔍 Fetching repos from $ORG"
+          if [ -n "$INPUT_REPOS" ]; then
+            echo "📌 User provided repos. Using those only."
 
-            if [ -n "$REPOS" ]; then
-              IFS=',' read -ra REPO_LIST <<< "$REPOS"
-            else
-              mapfile -t REPO_LIST < <(gh repo list "$ORG" --limit 1000 --json name -q '.[].name')
+            # split user input into a JSON array
+            REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
+
+          else
+            echo "📦 No repos provided. Fetching all repos from org: $ORG"
+
+            REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
+
+            if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
+              echo "❌ No repos found or missing permissions"
+              exit 1
             fi
+          fi
 
-            echo "📦 Found ${#REPO_LIST[@]} repositories in $ORG"
-            for REPO in "${REPO_LIST[@]}"; do
-              echo "🚨 Scanning $ORG/$REPO ..."
-               rm -rf "$REPO"
-              REPO_URL="https://github.com/$ORG/$REPO.git"
-              REPORT="trufflehog-reports/${ORG}__${REPO}.json"
+          echo "📦 Final repo list: $REPOS"
 
-              mkdir -p trufflehog-reports
-              trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT" || true
-            done
-          done
-          echo "✅ TruffleHog scanning complete!"
+          MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
 
-      - name: Upload TruffleHog Reports
-        uses: actions/upload-artifact@v4
+          # Output matrix
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  truffle-scan:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
+    env:
+      ORG: ${{ github.event.inputs.workingOrgs }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install TruffleHog
+        run: pip install trufflehog jq
+      - name: Run TruffleHog
+        run: |
+          REPO="${{ matrix.repo }}"
+          echo "🚨 Scanning $ORG/$REPO ..."
+          mkdir -p trufflehog-reports
+          REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
+
+          trufflehog --json --regex \
+            --rules ./trufflehog-custom-rules.json \
+            "$REPO_URL" | jq '.' > "trufflehog-reports/${ORG}__${REPO}.json" || true
+      - uses: actions/upload-artifact@v4
         with:
-          name: trufflehog-reports
+          name: trufflehog-${{ matrix.repo }}
           path: trufflehog-reports/

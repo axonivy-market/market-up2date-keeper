@@ -1,5 +1,5 @@
 name: Checking dangling commits by Trufflehog
- 
+
 permissions:
   contents: read
 on:
@@ -11,7 +11,7 @@ on:
       workingRepos:
         description: 'Comma-separated list of repo names (optional)'
         default: ''
- 
+
 jobs:
   prepare:
     runs-on: ubuntu-latest

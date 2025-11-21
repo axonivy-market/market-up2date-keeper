@@ -1,5 +1,5 @@
 name: Checking dangling commits by Trufflehog
-
+ 
 permissions:
   contents: read
 on:
@@ -11,7 +11,7 @@ on:
       workingRepos:
         description: 'Comma-separated list of repo names (optional)'
         default: ''
-
+ 
 jobs:
   prepare:
     runs-on: ubuntu-latest
@@ -23,38 +23,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ORG="${{ github.event.inputs.workingOrgs || 'axonivy-market' }}"
+          ORG="${{ github.event.inputs.workingOrgs }}"
           INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
-
-          echo "🔍 Org: $ORG"
-          echo "🔍 User Repo Input: '$INPUT_REPOS'"
-
           if [ -n "$INPUT_REPOS" ]; then
-            echo "📌 User provided repos. Using those only."
-
-            # split user input into a JSON array
             REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
-
           else
-            echo "📦 No repos provided. Fetching all repos from org: $ORG"
-
+          # Get full repo list from org
             REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-
-            if [ -z "$REPOS" ] || [ "$REPOS" = "[]" ]; then
-              echo "❌ No repos found or missing permissions"
-              exit 1
-            fi
+            echo "📦 Found repos: $REPOS"
           fi
-
-          echo "📦 Final repo list: $REPOS"
-
+          # Build matrix JSON object
           MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
-
-          # Output matrix
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
   truffle-scan:
     needs: prepare
     runs-on: ubuntu-latest
@@ -71,14 +53,20 @@ jobs:
       - name: Run TruffleHog
         run: |
           REPO="${{ matrix.repo }}"
-          echo "🚨 Scanning $ORG/$REPO ..."
+          REPORT="trufflehog-reports/${ORG}__${REPO}.json"
           mkdir -p trufflehog-reports
           REPO_URL="https://${GH_TOKEN}@github.com/$ORG/$REPO.git"
+          rm -rf "$REPO"
+          echo "🚨 Scanning $ORG/$REPO ..."
 
-          trufflehog --json --regex \
-            --rules ./trufflehog-custom-rules.json \
-            "$REPO_URL" | jq '.' > "trufflehog-reports/${ORG}__${REPO}.json" || true
+          if timeout 5m trufflehog --json --regex --rules ./trufflehog-custom-rules.json "$REPO_URL" | jq '.' > "$REPORT"; then
+              echo "✅ Full scan completed"
+          else
+              echo "⏱️ Timeout → fallback to 100 commits"
+              timeout 5m trufflehog --json --regex --rules ./trufflehog-custom-rules.json --max-depth 100 "$REPO_URL" | jq '.' > "$REPORT" || true
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: trufflehog-${{ matrix.repo }}
-          path: trufflehog-reports/
+          path: trufflehog-reports/${{ env.ORG }}__${{ matrix.repo }}.json
+          if-no-files-found: warn

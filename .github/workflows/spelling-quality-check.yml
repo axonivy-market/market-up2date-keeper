@@ -1,0 +1,63 @@
+name: Spelling Quality Check
+
+permissions:
+  contents: read
+on:
+  workflow_dispatch:
+    inputs:
+      workingOrgs:
+        description: 'Comma-separated orgs to check'
+        default: 'axonivy-market'
+      workingRepos:
+        description: 'Comma-separated list of repo names (optional)'
+        default: 'mattermost-connector'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix dynamically
+        id: set-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ORG="${{ github.event.inputs.workingOrgs }}"
+          INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
+          if [ -n "$INPUT_REPOS" ]; then
+            REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
+          else
+          # Get full repo list from org
+            REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
+            echo "📦 Found repos: $REPOS"
+          fi
+          # Build matrix JSON object
+          MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+  spelling-quality-check:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
+    env:
+      ORG: ${{ github.event.inputs.workingOrgs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ matrix.repo }}/$ORG
+          path: target-repo
+
+      - name: Install CSpell
+        run: npm install -g cspell
+
+      - name: Run CSpell - Spelling Quality Check
+        run: |
+          REPO="${{ matrix.repo }}"
+          echo "🚨 Scanning $ORG/$REPO ..."
+          cspell "**/*" --ignore-regex '/axonivy|Up2date|ivyteam,wawa,ivy,e2e/' --exclude ".github/**" --exclude ".git/**" --exclude ".settings/**" --exclude ".gitignore" --exclude ".project" --exclude ".editorconfig" --exclude ".classpath"
+

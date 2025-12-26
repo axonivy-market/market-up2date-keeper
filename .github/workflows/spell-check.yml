@@ -1,0 +1,152 @@
+name: Spell Check
+
+permissions:
+  contents: read
+on:
+  workflow_dispatch:
+    inputs:
+      workingRepos:
+        description: 'Comma-separated list of repository names. e.g., a-trust-connector,process-analyser. If this field is left empty, spell checking will be applied to all market extensions.'
+      workingBranch:
+        description: 'Which branch needs to be spell-checked? e.g., master, release/12.0, ...'
+        default: 'master'
+        required: true
+
+env:
+  WORKING_ORG: axonivy-market
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Generate matrix dynamically
+        id: set-matrix
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKING_ORG: ${{ env.WORKING_ORG }}
+        run: |
+          ORG="${WORKING_ORG}"
+          INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
+          if [ -n "$INPUT_REPOS" ]; then
+            REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
+          else
+          # Get full repo list from org
+            REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
+            echo "📦 Found repos: $REPOS"
+          fi
+          # Build matrix JSON object
+          MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  spell-check:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
+
+    steps:
+      - name: Check if branch exists in target repository
+        id: check_branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ORG="${{ env.WORKING_ORG }}"
+          REPO="${{ matrix.repo }}"
+          BRANCH="${{ github.event.inputs.workingBranch }}"
+          if gh api repos/$ORG/$REPO/branches/$BRANCH 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch $BRANCH does not exist in $ORG/$REPO."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fail gracefully if branch does not exist
+        if: steps.check_branch.outputs.exists == 'false'
+        run: |
+          echo "The branch '${{ github.event.inputs.workingBranch }}' does not exist in '${{ env.WORKING_ORG }}/${{ matrix.repo }}'. Skipping."
+
+      - uses: actions/checkout@v4
+        if: steps.check_branch.outputs.exists == 'true'
+        with:
+          repository: ${{ env.WORKING_ORG }}/${{ matrix.repo }}
+          path: target-repo
+          ref: ${{ github.event.inputs.workingBranch }}
+
+      - name: Install CSpell
+        if: steps.check_branch.outputs.exists == 'true'
+        run: |
+          npm install -g cspell@8.14.1
+          echo "Cspell Version:"
+          cspell --version
+
+      - name: Create custom cspell config
+        if: steps.check_branch.outputs.exists == 'true'
+        run: |
+          cat > cspell.json <<EOF
+          {
+            "version": "0.2",
+            "files": [
+              "**/*.md",
+              "**/*_en.yaml",
+              "**/variables.yaml",
+              "**/*.xhtml"
+            ],
+            "ignorePaths": [
+              "**/*_de.md",
+              "**/*_DE.md",
+              "**/webContent/layouts/frame*.xhtml",
+              "**/webContent/layouts/basic*.xhtml",
+              "**/webContent/layouts/includes/*.xhtml"
+            ],
+            "words": [
+              "AxonIvy", "axonactive", "ivy", "ivyteam", "wawa", "Up2date",
+              "e2e", "panelgrid", "toggleable", "orderlist", "tablewrapper",
+              "hoverable", "gridlines", "formgrid", "maxdate", "mindate",
+              "chkbox", "confirmdialog", "maximizable", "outputlabel",
+              "webcontent", "Unsorting", "nogutter", "navicon", "HANA",
+              "Recordset", "Recordsets", "fileref", "newkey", "ESIGN",
+              "keyout", "inkey", "Aspose", "primeflex", "primefaces",
+              "dynaForm", "dyna", "Startable", "caseprocessviewer", "EMLX",
+              "visualvm", "vertexai", "webservice", "apikey", "talentlink",
+              "Successfactors", "statefuldatatable", "datatable", "Threema",
+              "threemaid", "Keypair", "azureopenai", "Skribble", "SFTP",
+              "rebex", "sshkey", "Keyphrase", "sshpassphrase", "patterndemos",
+              "suneditor", "chartjs", "datalabels", "metaproc", "masterdetail",
+              "Weblate", "mailstore", "XOAUTH", "sasl", "imap", "imaps",
+              "clazz", "intellix", "Hubspot", "Genderize", "formeditordemos",
+              "DocuWare", "filecabinetid", "DocuSign", "daemonless", "npipe",
+              "docfactory", "deepl", "glassfish", "HSQL", "hsqldb", "Liquibase",
+              "cmseditor", "casemailcomponent", "nbsp", "Servicebus", "axonivypdf",
+              "axonivyexpress", "axonivycells", "approvaldecision", "Analyser",
+              "chatbots", "aiassistant", "adobesign", "atrust", "SOQL",
+              "HandySignatur", "handy-signatur", "SignaturBox", "Signatur-Box"
+            ]
+          }
+          EOF
+
+      - name: Run CSpell - Spell Check
+        if: steps.check_branch.outputs.exists == 'true'
+        run: |
+          set +e
+          REPO="${{ matrix.repo }}"
+          echo "🔤🔍 ${{ env.WORKING_ORG }}/$REPO - branch:${{ github.event.inputs.workingBranch }} ..."
+          cd target-repo
+          cspell lint --config ../cspell.json > "$REPO.txt"
+          CSPELL_EXIT=$?
+          if [ "$CSPELL_EXIT" -ne 0 ]; then
+            echo "Spell check failed for $REPO (exit code $CSPELL_EXIT). See $REPO.txt for details."
+          fi
+          exit "$CSPELL_EXIT"
+
+      - name: Upload Spell Check Results
+        if: failure() && steps.check_branch.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.repo }}
+          path: target-repo/*.txt

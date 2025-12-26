@@ -133,6 +133,7 @@ jobs:
       - name: Run CSpell - Spell Check
         if: steps.check_branch.outputs.exists == 'true'
         run: |
+          set +e
           REPO="${{ matrix.repo }}"
           echo "🔤🔍 ${{ env.WORKING_ORG }}/$REPO - branch:${{ github.event.inputs.workingBranch }} ..."
           cd target-repo
@@ -140,8 +141,8 @@ jobs:
           CSPELL_EXIT=$?
           if [ "$CSPELL_EXIT" -ne 0 ]; then
             echo "Spell check failed for $REPO (exit code $CSPELL_EXIT). See $REPO.txt for details."
-            exit "$CSPELL_EXIT"
           fi
+          exit "$CSPELL_EXIT"
 
       - name: Upload Spell Check Results
         if: failure() && steps.check_branch.outputs.exists == 'true'

@@ -81,7 +81,7 @@ jobs:
       - name: Install CSpell
         if: steps.check_branch.outputs.exists == 'true'
         run: |
-          npm install -g cspell@latest
+          npm install -g cspell@8.14.1
           echo "Cspell Version:"
           cspell --version
 
@@ -115,7 +115,7 @@ jobs:
               "dynaForm", "dyna", "Startable", "caseprocessviewer", "EMLX",
               "visualvm", "vertexai", "webservice", "apikey", "talentlink",
               "Successfactors", "statefuldatatable", "datatable", "Threema",
-              "threemaid", "Keypair", "azureopenai", "Skribble", "SFPT",
+              "threemaid", "Keypair", "azureopenai", "Skribble", "SFTP",
               "rebex", "sshkey", "sshpassphrase", "SOQL", "patterndemos",
               "suneditor", "chartjs", "datalabels", "metaproc", "masterdetail",
               "Weblate", "mailstore", "XOAUTH", "sasl", "imap", "imaps",

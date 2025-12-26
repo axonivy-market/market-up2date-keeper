@@ -116,7 +116,7 @@ jobs:
               "visualvm", "vertexai", "webservice", "apikey", "talentlink",
               "Successfactors", "statefuldatatable", "datatable", "Threema",
               "threemaid", "Keypair", "azureopenai", "Skribble", "SFTP",
-              "rebex", "sshkey", "sshpassphrase", "SOQL", "patterndemos",
+              "rebex", "sshkey", "Keyphrase", "SOQL", "patterndemos",
               "suneditor", "chartjs", "datalabels", "metaproc", "masterdetail",
               "Weblate", "mailstore", "XOAUTH", "sasl", "imap", "imaps",
               "clazz", "intellix", "Hubspot", "Genderize", "formeditordemos",
@@ -124,7 +124,7 @@ jobs:
               "docfactory", "deepl", "glassfish", "HSQL", "hsqldb", "Liquibase",
               "cmseditor", "casemailcomponent", "nbsp", "Servicebus", "axonivypdf",
               "axonivyexpress", "axonivycells", "approvaldecision", "Analyser",
-              "chatbots", "Keyphrase", "aiassistant", "adobesign", "atrust",
+              "chatbots", "aiassistant", "adobesign", "atrust",
               "HandySignatur", "handy-signatur", "SignaturBox", "Signatur-Box"
             ]
           }

@@ -18,29 +18,15 @@ env:
 jobs:
   prepare:
     runs-on: ubuntu-latest
-    outputs:
-      repo-matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - uses: actions/checkout@v4
       - name: Generate matrix dynamically
-        id: set-matrix
-        env:
-          GH_TOKEN: ${{ secrets.GH }}
-          WORKING_ORG: ${{ env.WORKING_ORG }}
+        id: generate_matrix
         run: |
-          ORG="${WORKING_ORG}"
-          INPUT_REPOS="${{ github.event.inputs.workingRepos }}"
-          if [ -n "$INPUT_REPOS" ]; then
-            REPOS=$(jq -R 'split(",")' <<< "$INPUT_REPOS")
-          else
-          # Get full repo list from org
-            REPOS=$(gh repo list "$ORG" --limit 1000 --json name -q '[.[].name]')
-            echo "📦 Found repos: $REPOS"
-          fi
-          # Build matrix JSON object
-          MATRIX_JSON=$(jq -n --argjson repos "$REPOS" '{ include: $repos }')
-          echo "matrix<<EOF" >> $GITHUB_OUTPUT
-          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          chmod +x ./generate-repo-matrix.sh
+          ./generate-repo-matrix.sh ${{ github.event.inputs.workingRepos }}
+    outputs:
+      matrix: ${{ steps.generate_matrix.outputs.matrix }}
 
   spell-check:
     needs: prepare
@@ -48,13 +34,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
+        repo: ${{ fromJson(needs.prepare.outputs.matrix).include }}
 
     steps:
       - name: Check if branch exists in target repository
         id: check_branch
         env:
-          GH_TOKEN: ${{ secrets.GH }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           ORG="${{ env.WORKING_ORG }}"
           REPO="${{ matrix.repo }}"
@@ -82,8 +68,7 @@ jobs:
         if: steps.check_branch.outputs.exists == 'true'
         run: |
           npm install -g cspell@8.14.1
-          echo "Cspell Version:"
-          cspell --version
+          echo "Cspell Version: $(cspell --version)"
 
       - name: Create custom cspell config
         if: steps.check_branch.outputs.exists == 'true'

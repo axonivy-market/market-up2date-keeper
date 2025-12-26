@@ -24,7 +24,7 @@ jobs:
       - name: Generate matrix dynamically
         id: set-matrix
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH }}
           WORKING_ORG: ${{ env.WORKING_ORG }}
         run: |
           ORG="${WORKING_ORG}"
@@ -54,7 +54,7 @@ jobs:
       - name: Check if branch exists in target repository
         id: check_branch
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH }}
         run: |
           ORG="${{ env.WORKING_ORG }}"
           REPO="${{ matrix.repo }}"
@@ -133,16 +133,10 @@ jobs:
       - name: Run CSpell - Spell Check
         if: steps.check_branch.outputs.exists == 'true'
         run: |
-          set +e
           REPO="${{ matrix.repo }}"
           echo "🔤🔍 ${{ env.WORKING_ORG }}/$REPO - branch:${{ github.event.inputs.workingBranch }} ..."
           cd target-repo
           cspell lint --config ../cspell.json > "$REPO.txt"
-          CSPELL_EXIT=$?
-          if [ "$CSPELL_EXIT" -ne 0 ]; then
-            echo "Spell check failed for $REPO (exit code $CSPELL_EXIT). See $REPO.txt for details."
-          fi
-          exit "$CSPELL_EXIT"
 
       - name: Upload Spell Check Results
         if: failure() && steps.check_branch.outputs.exists == 'true'
@@ -150,3 +144,4 @@ jobs:
         with:
           name: ${{ matrix.repo }}
           path: target-repo/*.txt
+          if-no-files-found: warn

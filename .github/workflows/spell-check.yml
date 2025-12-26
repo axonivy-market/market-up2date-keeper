@@ -51,13 +51,42 @@ jobs:
         repo: ${{ fromJson(needs.prepare.outputs.repo-matrix).include }}
 
     steps:
+      - name: Check if branch exists in target repository
+        id: check_branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ORG="${{ env.WORKING_ORG }}"
+          REPO="${{ matrix.repo }}"
+          BRANCH="${{ github.event.inputs.workingBranch }}"
+          if gh api repos/$ORG/$REPO/branches/$BRANCH 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch $BRANCH does not exist in $ORG/$REPO."
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fail gracefully if branch does not exist
+        if: steps.check_branch.outputs.exists == 'false'
+        run: |
+          echo "The branch '${{ github.event.inputs.workingBranch }}' does not exist in '${{ env.WORKING_ORG }}/${{ matrix.repo }}'. Skipping."
+
+      - uses: actions/checkout@v4
+        if: steps.check_branch.outputs.exists == 'true'
+        with:
+          repository: ${{ env.WORKING_ORG }}/${{ matrix.repo }}
+          path: target-repo
+          ref: ${{ github.event.inputs.workingBranch }}
+
       - name: Install CSpell
+        if: steps.check_branch.outputs.exists == 'true'
         run: |
           npm install -g cspell@latest
           echo "Cspell Version:"
           cspell --version
 
       - name: Create custom cspell config
+        if: steps.check_branch.outputs.exists == 'true'
         run: |
           cat > cspell.json <<EOF
           {
@@ -101,21 +130,21 @@ jobs:
           }
           EOF
 
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ env.WORKING_ORG }}/${{ matrix.repo }}
-          path: target-repo
-          ref: ${{ github.event.inputs.workingBranch }}
-
       - name: Run CSpell - Spell Check
+        if: steps.check_branch.outputs.exists == 'true'
         run: |
           REPO="${{ matrix.repo }}"
           echo "🔤🔍 ${{ env.WORKING_ORG }}/$REPO - branch:${{ github.event.inputs.workingBranch }} ..."
           cd target-repo
-          cspell lint --config ../cspell.json > $REPO.txt
+          cspell lint --config ../cspell.json > "$REPO.txt"
+          CSPELL_EXIT=$?
+          if [ "$CSPELL_EXIT" -ne 0 ]; then
+            echo "Spell check failed for $REPO (exit code $CSPELL_EXIT). See $REPO.txt for details."
+            exit "$CSPELL_EXIT"
+          fi
 
       - name: Upload Spell Check Results
-        if: failure()
+        if: failure() && steps.check_branch.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.repo }}

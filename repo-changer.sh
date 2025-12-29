@@ -2,8 +2,6 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$DIR/repo-collector.sh"
 
-RELEASE_MODE=0 # default: operate on master; set to 1 for release/* logic
-
 if [ -z "${BRANCH}" ]; then
   echo "no BRANCH variable defined"
   exit 123
@@ -54,6 +52,9 @@ process_branch() {
 
 changeRepos() {
   changeAction="$1"
+  RELEASE_MODE="$2"
+
+  echo RELEASE_MODE is "${RELEASE_MODE}"
   if [ -z "$changeAction" ]; then
     echo "changeRepos was called without a parameter to define the 'change' function name"
     exit 125

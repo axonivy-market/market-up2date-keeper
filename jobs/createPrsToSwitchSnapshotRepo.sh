@@ -15,4 +15,4 @@ updateSnapshotSource() {
   sed -i -E "s|<url>${oldRepo}</url>|<url>${newRepo}</url>|g" $where
 }
 
-changeRepos 'updateSnapshotSource'
+changeRepos 'updateSnapshotSource' 0

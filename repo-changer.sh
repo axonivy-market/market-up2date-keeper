@@ -59,10 +59,9 @@ changeRepos() {
     echo "changeRepos was called without a parameter to define the 'change' function name"
     exit 125
   fi
-  # collectRepos | while read -r repo_name; do
-  #   changeSingleRepo "$repo_name" "$changeAction"
-  # done
-  changeSingleRepo "asana-connector" "$changeAction"
+  collectRepos | while read -r repo_name; do
+    changeSingleRepo "$repo_name" "$changeAction"
+  done
   echo "migrated: ${migrated_repos[@]}"
 }
 

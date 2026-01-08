@@ -59,9 +59,10 @@ changeRepos() {
     echo "changeRepos was called without a parameter to define the 'change' function name"
     exit 125
   fi
-  collectRepos | while read -r repo_name; do
-    changeSingleRepo "$repo_name" "$changeAction"
-  done
+  # collectRepos | while read -r repo_name; do
+  #   changeSingleRepo "$repo_name" "$changeAction"
+  # done
+  changeSingleRepo "msgraph-connector" "$changeAction"
   echo "migrated: ${migrated_repos[@]}"
 }
 

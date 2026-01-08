@@ -7,7 +7,7 @@ ignored_repos=(
   "demo-projects"
 )
 
-org=axonivy-market
+org=quanpv-org
 
 githubRepos() {
   ghApi="orgs/${org}/repos?per_page=100"

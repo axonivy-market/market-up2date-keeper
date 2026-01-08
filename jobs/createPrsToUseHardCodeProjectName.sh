@@ -16,4 +16,4 @@ updatePomWithRepoName() {
   fi
 }
 
-changeRepos 'updatePomWithRepoName' 0 // use 0 for master branch processing, 1 for release/* branches
+changeRepos 'updatePomWithRepoName' 1 // use 0 for master branch processing, 1 for release/* branches

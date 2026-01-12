@@ -1,19 +1,25 @@
 #!/bin/bash
-# This script creates PRs to add CODEOWNERS and workflow to prevent modification of README_DE.md
 # Add new rule in CODEOWNERS and create a GitHub Actions workflow to block changes to README_DE.md
 # Enable branch protection on the default branch
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/../repo-collector.sh
 
+# Add additional repos to ignore
+ignored_repos+=("msgraph-connector",
+  "amazon-aws4-authenticator",
+  "intellix-connector",
+  "html-dialog-utils",
+  "express-importer",
+  "mobileapp",
+  "dmn-decision-table")
+
 DEFAULT_BRANCH="master"
 REVIEWER="Octopus-AxonIvy"
-README_FILE="README_DE.md"
 CODEOWNERS_FILE=".github/CODEOWNERS"
-CODEOWNERS_RULE="**/${README_FILE}  @axonivy-market/team-octopus"
-WORKFLOW_FILE=".github/workflows/translation-locker.yml"
+CODEOWNERS_RULE="**/README_DE.md  @axonivy-market/team-octopus"
 BRANCH_NAME="feature/MARP-3334-disable-README_DE-file"
-PR_TITLE="Add CODEOWNERS and workflow to disable README_DE.md"
+PR_TITLE="MARP-3334: Add CODEOWNERS to disable README_DE.md"
 
 enableBranchProtection() {
   repo_name=$1
@@ -44,25 +50,12 @@ JSON
   fi
 }
 
-createPR() {
+updateCodeOwnerViaPullRequest() {
   repo_name=$1
   git clone "https://github.com/${org}/${repo_name}.git"
   cd "${repo_name}"
 
-  # Search for README_DE.md in any directory containing 'product' in its path
-  readme_files=$(find . -type f -name "${README_FILE}" | grep -i "product")
-  
-  if [ -z "$readme_files" ]; then
-    echo "⚠ ${README_FILE} not found in any product folder of $repo_name, skipping...!"
-    cd ..
-    rm -rf "${repo_name}"
-    return
-  else
-    echo "Found ${README_FILE} in:"
-    echo "$readme_files"
-  fi
-
-  # Checkout new branch.
+  # Checkout new branch
   if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
     echo "⚠ Branch $BRANCH_NAME already exists in $repo_name"
     git checkout "$BRANCH_NAME"
@@ -71,15 +64,14 @@ createPR() {
   fi
 
   changes_made=false
-
   mkdir -p .github
   if [ -f "${CODEOWNERS_FILE}" ]; then
-    if ! grep -q "${README_FILE}" "${CODEOWNERS_FILE}"; then
-      echo "✓ Adding ${README_FILE} to existing CODEOWNERS"
+    if ! grep -q "README_DE.md" "${CODEOWNERS_FILE}"; then
+      echo "✓ Adding README_DE.md to existing CODEOWNERS"
       printf "\n${CODEOWNERS_RULE}\n" >> "${CODEOWNERS_FILE}"
       changes_made=true
     else
-      echo "⚠ ${README_FILE} already in CODEOWNERS"
+      echo "⚠ README_DE.md already in CODEOWNERS"
     fi
   else
     echo "✓ Creating new CODEOWNERS file"
@@ -89,28 +81,9 @@ EOF
     changes_made=true
   fi
 
-  mkdir -p .github/workflows
-  
-  if [ ! -f "${WORKFLOW_FILE}" ]; then
-    echo "✓ Creating workflow to disable ${README_FILE}"
-    cat > "${WORKFLOW_FILE}" << 'WORKFLOW_EOF'
-name: Translation Locker
-
-on:
-  pull_request:
-
-jobs:
-  build:
-    uses: axonivy-market/github-workflows/.github/workflows/translation-locker.yml@v6
-WORKFLOW_EOF
-    changes_made=true
-  else
-    echo "⚠ Workflow file already exists"
-  fi
-
   # Commit and push changes
   if [ "$changes_made" = true ]; then
-    git add "${CODEOWNERS_FILE}" "${WORKFLOW_FILE}"
+    git add "${CODEOWNERS_FILE}"
     
     if git diff --cached --quiet; then
       echo "No changes to commit for $repo_name"
@@ -119,7 +92,7 @@ WORKFLOW_EOF
       return
     fi
 
-    git commit -m "Add CODEOWNERS and workflow to disable ${README_FILE}"
+    git commit -m "Add CODEOWNERS to disable README_DE.md"
 
     git push origin "$BRANCH_NAME"
 
@@ -157,8 +130,9 @@ main() {
       continue
     fi
     echo "Processing repo: $repo_name"
-    createPR "$repo_name"
+    updateCodeOwnerViaPullRequest "$repo_name"
   done
+  
 }
 
 main

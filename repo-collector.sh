@@ -1,6 +1,7 @@
 # re-usable collection of market repos to modify
 
 ignored_repos=(
+  "github-repo-manager",
   "market-up2date-keeper"
   "market"
   "market-monitor"

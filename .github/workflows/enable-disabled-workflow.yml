@@ -4,32 +4,29 @@ permissions:
   contents: read
   actions: write
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 2 * * 1'
-  workflow_dispatch:
-    inputs:
-      workingOrg:
-        description: 'Organization to scan'
-        default: 'axonivy-market'
 
 jobs:
   re-enable:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
       - name: Re-enable disabled workflows
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          ORG="${{ github.event.inputs.workingOrg }}"
-          echo "Scanning org: $ORG"
+          set -euo pipefail
+          source ./repo-collector.sh
+          echo "Scanning org: $org"
           echo "------------------------------------"
 
           # Get all non-archived repos in org
-          gh repo list "$ORG" --limit 1000 --json name,archived -q '.[] | select(.archived==false) | .name' |
-          while read repo; do
+          for repo in $(collectRepos); do
             echo "Checking repo: $repo"
-            workflows=$(curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows")
+            workflows=$(curl -s -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$org/$repo/actions/workflows")
 
             # Skip repos without workflow access
             if ! echo "$workflows" | jq -e '.workflows' >/dev/null 2>&1; then
@@ -39,8 +36,8 @@ jobs:
 
             # Enable disabled workflows due to inactivity
             echo "$workflows" | jq -r '.workflows[]? | select(.state=="disabled_inactivity") | "\(.id)|\(.name)"' | 
-            while IFS="|" read id name; do
+            while IFS="|" read -r id name; do
               echo "  → Enabling workflow: $name (ID: $id)"
-              curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$ORG/$repo/actions/workflows/$id/enable">/dev/null
+              curl -s -X PUT -H "Authorization: token $GH_TOKEN" "https://api.github.com/repos/$org/$repo/actions/workflows/$id/enable">/dev/null
             done
           done

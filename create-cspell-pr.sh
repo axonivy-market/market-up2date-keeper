@@ -1,53 +1,29 @@
 #!/bin/bash
 set -e
 
-ORG="tvtphuc-axonivy"
-BASE_DIR="$(pwd)/repos"
-BRANCH_NAME="feature/MARP-3642-How-to-handle-spelling-errors"
-COMMIT_MSG="Add cspell configuration and update CI workflow"
-PR_TITLE="MARP-3642 Add cspell configuration and update CI workflow"
-PR_BODY="This PR adds cspell.json to the repository root and updates CI-Build to use the internal github-workflows with cspell support."
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Define branch and PR details
+BRANCH="feature/MARP-3642-How-to-handle-spelling-errors"
+TITLE="MARP-3642 Add cspell configuration and update CI workflow"
+BODY="This PR adds cspell.json to the repository root and updates CI-Build to use the internal github-workflows with cspell support."
+
+# Source shared functions AFTER defining required variables
+source "$DIR/repo-collector.sh"
+source "$DIR/repo-changer.sh"
 
 WORKFLOW_FILE=".github/workflows/ci.yml"
 
-mkdir -p "$BASE_DIR"
-cd "$BASE_DIR"
-
-echo "Fetching repositories from org: $ORG"
-
-repos=$(gh repo list "$ORG" --limit 200 --json name -q '.[].name')
-
-for repo in $repos; do
-  echo "===================================="
-  echo "Processing repo: $repo"
-
-  if [ ! -d "$repo" ]; then
-    gh repo clone "$ORG/$repo"
-  fi
-
-  cd "$repo"
-
-  DEFAULT_BRANCH="master"
-  git checkout "$DEFAULT_BRANCH"
-  git pull origin "$DEFAULT_BRANCH"
-
+# Change action function
+addCspellConfiguration() {
+  local repo_name="$1"
+  
   # Skip if workflow file does not exist
   if [ ! -f "$WORKFLOW_FILE" ]; then
     echo "CI workflow not found → skip repo"
-    cd ..
-    continue
+    return
   fi
 
-  # --------------------------------
-  # Skip if branch already exists on remote
-  # --------------------------------
-  if git ls-remote --exit-code --heads origin "$BRANCH_NAME" > /dev/null 2>&1; then
-    echo "Branch '$BRANCH_NAME' already exists → skip repo"
-    cd ..
-    continue
-  fi
-
-  git checkout -B "$BRANCH_NAME"
 
   # -------------------------
   # Create cspell.json (root)
@@ -101,19 +77,9 @@ EOF
       cspellConfig: cspell.json' "$WORKFLOW_FILE"
 
   rm -f "$WORKFLOW_FILE.bak"
+}
 
-  git add cspell.json "$WORKFLOW_FILE"
-  git commit -m "$COMMIT_MSG"
-  git push -u origin "$BRANCH_NAME"
-
-  gh pr create \
-    --repo "$ORG/$repo" \
-    --title "$PR_TITLE" \
-    --body "$PR_BODY" \
-    --base "$DEFAULT_BRANCH" \
-    --head "$BRANCH_NAME"
-
-  cd ..
-done
+# Execute the change on all repos
+changeRepos "addCspellConfiguration"
 
 echo "✅ All PRs created successfully"

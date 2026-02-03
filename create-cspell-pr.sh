@@ -6,7 +6,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Define branch and PR details
 BRANCH="feature/MARP-3642-How-to-handle-spelling-errors"
 TITLE="MARP-3642 Add cspell configuration and update CI workflow"
-BODY="This PR adds cspell.json to the repository root and updates CI-Build to use the internal github-workflows with cspell support."
+BODY="MARP-3642 This PR adds cspell.json to the repository root and updates CI-Build to use the internal github-workflows with cspell support."
 
 # Source shared functions AFTER defining required variables
 source "$DIR/repo-collector.sh"
@@ -68,11 +68,11 @@ EOF
   # Update CI-Build workflow
   # --------------------------------
   sed -i.bak \
-    's|uses: axonivy-market/github-workflows/.github/workflows/ci.yml@.*|uses: tvtphuc-axonivy/github-workflows/.github/workflows/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors|' \
+    's|uses: axonivy-market/github-workflows/.github/workflows/ci.yml@.*|uses: axonivy-market/github-workflows/.github/workflows/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors|' \
     "$WORKFLOW_FILE"
 
   # Inject `with:` block after uses
-  sed -i.bak '/uses: tvtphuc-axonivy\/github-workflows\/.github\/workflows\/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors/a\
+  sed -i.bak '/uses: axonivy-market\/github-workflows\/.github\/workflows\/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors/a\
     with:\
       cspellConfig: cspell.json' "$WORKFLOW_FILE"
 

@@ -1,6 +1,3 @@
-#!/bin/bash
-set -e
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Define branch and PR details
@@ -9,7 +6,6 @@ TITLE="MARP-3642 Add cspell configuration and update CI workflow"
 BODY="MARP-3642 This PR adds cspell.json to the repository root and updates CI-Build to use the internal github-workflows with cspell support."
 
 # Source shared functions AFTER defining required variables
-source "$DIR/repo-collector.sh"
 source "$DIR/repo-changer.sh"
 
 WORKFLOW_FILE=".github/workflows/ci.yml"

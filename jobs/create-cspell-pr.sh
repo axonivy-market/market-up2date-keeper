@@ -60,15 +60,8 @@ addCspellConfiguration() {
 EOF
   fi
 
-  # --------------------------------
-  # Update CI-Build workflow
-  # --------------------------------
-  sed -i.bak \
-    's|uses: axonivy-market/github-workflows/.github/workflows/ci.yml@.*|uses: axonivy-market/github-workflows/.github/workflows/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors|' \
-    "$WORKFLOW_FILE"
-
   # Inject `with:` block after uses
-  sed -i.bak '/uses: axonivy-market\/github-workflows\/.github\/workflows\/ci.yml@feature\/MARP-3642-How-to-handle-spelling-errors/a\
+  sed -i.bak '/uses: axonivy-market\/github-workflows\/.github\/workflows\/ci.yml@v6/a\
     with:\
       cspellConfig: cspell.json' "$WORKFLOW_FILE"
 

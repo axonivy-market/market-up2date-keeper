@@ -39,10 +39,6 @@ updateActions() {
   git commit -m "Update workflow actions to ${tag}"
 }
 
-if [ -z "$releaseBranch" ]; then
-  releaseBranch="release/12.0"
-fi
-
 createReleaseBranch() {
   echo "Create release branch ${releaseBranch}"
   if git ls-remote --heads origin "${releaseBranch}" | grep -q "${releaseBranch}"; then
@@ -71,7 +67,9 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
-createReleaseBranch
+if [ -n "$releaseBranch" ]; then
+  createReleaseBranch
+fi
 branch="raise-to-${convert_to_version}"
 git switch -c $branch
 

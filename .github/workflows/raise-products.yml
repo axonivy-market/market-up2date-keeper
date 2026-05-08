@@ -7,6 +7,7 @@ on:
       product:
         description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
+        default: 'migrate-14.0'
       version:
         description: 'Snaphsot version to raise (e.g. "14.0.0-SNAPSHOT")'
         required: true
@@ -14,7 +15,7 @@ on:
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/14.0.0/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip'
       createReleaseBranch:
         description: 'Create a release branch to backup source code before raising. Only needed when raising from LTS to the next dev version.'
         required: false

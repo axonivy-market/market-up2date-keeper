@@ -56,7 +56,6 @@ jobs:
         run: |
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
-          export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

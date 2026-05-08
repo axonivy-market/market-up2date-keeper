@@ -10,6 +10,7 @@ artifactVersion() {
   if [ -f "pom.xml" ]; then
     mvn -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
     mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
+    updateMvnProperty
   fi
   # update version in pom.xml
   # loop through all folders

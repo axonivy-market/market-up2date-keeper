@@ -26,7 +26,7 @@ artifactVersion() {
   testerVersion="$3"
   # if root pom.xml exists
   if [ -f "pom.xml" ]; then
-    updatebuildPluginVersion $buildPluginVersion
+    updateBuildPluginVersion $buildPluginVersion
     mvn -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
     mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
   fi
@@ -34,7 +34,7 @@ artifactVersion() {
   # loop through all folders
   for d in */ ; do
     echo "Updating $d"
-    updatebuildPluginVersion $buildPluginVersion
+    updateBuildPluginVersion $buildPluginVersion
     updateTesterVersion $testerVersion
     mvn -f $d -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
     mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules

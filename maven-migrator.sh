@@ -15,7 +15,7 @@ artifactVersion() {
   # loop through all folders
   for d in */ ; do
     echo "Updating $d"
-    mvn -f $d -B versions:set -DnewVersion=$newVersion -DgenerateBackupPoms=false -DprocessAllModules=true
+    mvn -f $d -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
     mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
   done
 }

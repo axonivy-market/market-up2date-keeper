@@ -1,7 +1,7 @@
 updateMvnProperty() {
   name="$1"
   value="$2"
-  mvn -B versions:set-property versions:commit "-Dproperty=${name}" "-DnewVersion=${value}" -DallowSnapshots=true -DprocessAllModules
+  mvn -B versions:set-property versions:commit "-Dproperty=${name}" "-DnewVersion=${value}" -DallowSnapshots=true
 }
 
 updateBuildPluginVersion() {
@@ -20,11 +20,6 @@ updateTesterVersion() {
   fi
 }
 
-currentVersion() {
-  local pomDir="${1:-.}"
-  mvn -f "$pomDir" -q -DforceStdout -Dexpression=project.version --non-recursive help:evaluate 2>/dev/null
-}
-
 artifactVersion() {
   newVersion="$1"
   buildPluginVersion="$2"
@@ -32,9 +27,9 @@ artifactVersion() {
   # if root pom.xml exists
   if [ -f "pom.xml" ]; then
     updateBuildPluginVersion $buildPluginVersion
-    oldVersion=$(currentVersion .)
-    mvn -B versions:set "-DnewVersion=${newVersion}" "-DoldVersion=${oldVersion}" -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
+    updateTesterVersion $testerVersion
+    mvn -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
+    mvn -B versions:use-latest-versions -DgenerateBackupPoms=false
   fi
   # update version in pom.xml
   # loop through all folders
@@ -42,8 +37,7 @@ artifactVersion() {
     echo "Updating $d"
     updateBuildPluginVersion $buildPluginVersion
     updateTesterVersion $testerVersion
-    oldVersion=$(currentVersion "$d")
-    mvn -f "$d" -B versions:set "-DnewVersion=${newVersion}" "-DoldVersion=${oldVersion}" -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -f "$d" -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
+    mvn -f $d -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
+    mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false
   done
 }

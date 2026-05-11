@@ -16,15 +16,23 @@ on:
         description: 'Axon Ivy Engine URL'
         required: true
         default: 'https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip'
-      createReleaseBranch:
-        description: 'Create a release branch to backup source code before raising. Only needed when raising from LTS to the next dev version.'
+      migrateToLatestLTSVersion:
+        description: 'Migrate current source code to the latest LTS version (e.g. 14.0.0). If the value is false (migrate to latest dev version e.g. 13.0, 15.0,...), the source code will be clone into below releaseBranch before raising the version.'
         required: false
         type: boolean
         default: false
       releaseBranch:
-        description: 'Name of the release branch to create (e.g. "release/14.0"). Only used when "createReleaseBranch" is checked.'
+        description: 'Name of the release branch to create (e.g. "release/14.0"). Only used when "migrateToLatestLTSVersion" is false.'
         required: false
         default: 'release/14.0'
+      buildPluginVersion:
+        description: 'Version of the build plugin'
+        required: false
+        default: ''
+      testerVersion:
+        description: 'Version of the tester plugin'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -56,7 +64,10 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ inputs.engineUrl }}
-          export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
+          export releaseBranch=${{ inputs.migrateToLatestLTSVersion == false && '' || inputs.releaseBranch }}
+          export migrateToLatestLTSVersion=${{ inputs.migrateToLatestLTSVersion }}
+          export buildPluginVersion=${{ inputs.buildPluginVersion }}
+          export testerVersion=${{ inputs.testerVersion }}
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

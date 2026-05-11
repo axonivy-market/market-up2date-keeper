@@ -10,10 +10,4 @@ artifactVersion() {
   if [ -f "pom.xml" ]; then
     mvn -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
   fi
-  # update version in pom.xml
-  # loop through all folders
-  for d in */ ; do
-    echo "Updating $d"
-    mvn -f "$d" -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
-  done
 }

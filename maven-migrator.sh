@@ -6,10 +6,14 @@ updateMvnProperty() {
 
 artifactVersion() {
   newVersion="$1"
-  oldVersion=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout 2>/dev/null)
-  echo "Updating maven version from ${oldVersion} to ${newVersion}"
-  # if root pom.xml exists
+  # if root pom.xml exists, update all declared modules in one pass
   if [ -f "pom.xml" ]; then
-    mvn -B versions:set -DoldVersion=${oldVersion} -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
+    mvn -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
   fi
+  # update version in pom.xml
+  # loop through all folders
+  for d in */ ; do
+    echo "Updating $d"
+    mvn -f "$d" -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false
+  done
 }

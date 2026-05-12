@@ -36,9 +36,9 @@ showMigratedRepos() {
 }
 
 migrateListOfRepos() {
-  printf "%s\n" "adobe-acrobat-sign-connector" "google-translate-connector" |
+  collectRepos |
   while read repo_name; do
-    migrateRepo "$repo_name"
+    migrateRepo $repo_name
   done
   showMigratedRepos
 }

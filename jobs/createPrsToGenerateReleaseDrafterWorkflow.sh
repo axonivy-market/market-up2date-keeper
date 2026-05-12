@@ -60,7 +60,13 @@ githubRepos() {
 }
 
 collectRepos() {
-  printf "%s\n" "adobe-acrobat-sign-connector" "google-translate-connector"
+  githubRepos | 
+    jq -r '.[] | 
+    select(.archived == false) | 
+    select(.is_template == false) | 
+    select(.default_branch == "master") | 
+    select(.language != null) | 
+      .name' | sed 's/\r//g'
 }
 
 create_label_if_not_exists() {

@@ -9,22 +9,26 @@ on:
         required: false
         default: ''
       version:
-        description: 'Snaphsot version to raise (e.g. "14.0.0-SNAPSHOT")'
+        description: 'Snaphsot version to raise (e.g. "13.2.0-SNAPSHOT")'
         required: true
-        default: '14.0.0-SNAPSHOT'
+        default: '13.2.0-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/13.2/axonivy-engine.zip'
       createReleaseBranch:
-        description: 'Whether to create a release branch (e.g. "release/14.0") from the main branch. If false, the main branch will be migrated directly.'
+        description: 'Whether to create a release branch (e.g. "release/13.2") from the main branch. If false, the main branch will be migrated directly.'
         required: false
         type: boolean
         default: false
       releaseBranch:
-        description: 'Name of the release branch to create (e.g. "release/14.0"). Only used when "createReleaseBranch" is true.'
+        description: 'Name of the release branch to create (e.g. "release/13.2"). Only used when "createReleaseBranch" is true.'
         required: false
-        default: 'release/13.0'
+        default: 'release/12'
+      javaVersion:
+        description: 'Java version to use for the migration (e.g. "25")'
+        required: false
+        default: '25'
 
 
 permissions:
@@ -42,7 +46,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 25
+          java-version: 21
 
       - name: Configure Git
         run: |
@@ -58,6 +62,7 @@ jobs:
         run: |
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
+          export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

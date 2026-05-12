@@ -25,7 +25,7 @@ cloneRepo() {
 }
 
 updateMavenVersion() {
-  artifactVersion $convert_to_version $buildPluginVersion $testerVersion
+  artifactVersion $convert_to_version
 }
 
 commitChanges() {

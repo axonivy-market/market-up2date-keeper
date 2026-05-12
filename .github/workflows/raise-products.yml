@@ -7,7 +7,7 @@ on:
       product:
         description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
-        default: 'migrate-14.0'
+        default: ''
       version:
         description: 'Snaphsot version to raise (e.g. "14.0.0-SNAPSHOT")'
         required: true

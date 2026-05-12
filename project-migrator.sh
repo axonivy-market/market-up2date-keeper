@@ -4,7 +4,7 @@ if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi
 if [ -z "$engineUrl" ]; then
-  engineUrl="https://developer.axonivy.com/permalink/14.0.0/axonivy-engine.zip"
+  engineUrl="https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip"
 fi
 
 downloadEngine(){

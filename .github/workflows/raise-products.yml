@@ -62,7 +62,6 @@ jobs:
         run: |
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
-          export buildPluginVersion=${{ inputs.buildPluginVersion }}
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

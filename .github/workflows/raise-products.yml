@@ -24,7 +24,7 @@ on:
       releaseBranch:
         description: 'Name of the release branch to create (e.g. "release/14.0"). Only used when "createReleaseBranch" is true.'
         required: false
-        default: 'release/14.0'
+        default: 'release/13.0'
       buildPluginVersion:
         description: 'Version of the build plugin'
         required: false

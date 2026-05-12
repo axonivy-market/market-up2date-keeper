@@ -26,6 +26,9 @@ cloneRepo() {
 
 updateMavenVersion() {
   artifactVersion $convert_to_version $buildPluginVersion $testerVersion
+}
+
+commitChanges() {
   # commit changes
   git add .
   git commit -m "Update maven version to ${convert_to_version}"
@@ -72,8 +75,9 @@ fi
 branch="raise-to-${convert_to_version}"
 git switch -c $branch
 
-raiseProject
 updateMavenVersion
+raiseProject
+commitChanges
 updateActions
 push
 cd ..

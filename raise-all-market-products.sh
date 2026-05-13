@@ -17,12 +17,12 @@ fi
 
 convert_to_version=$1
 if [ -z "$convert_to_version" ]; then
-  echo "Missing target version parameter e.g 13.2.0-SNAPSHOT"
+  echo "Missing target version parameter e.g 14.0.0-SNAPSHOT"
   exit 1
 fi
 
 if [[ ! $convert_to_version == *-SNAPSHOT ]]; then
-  echo "Version must be SNAPSHOT e.g 13.2.0-SNAPSHOT"
+  echo "Version must be SNAPSHOT e.g 14.0.0-SNAPSHOT"
   exit 1
 fi
 

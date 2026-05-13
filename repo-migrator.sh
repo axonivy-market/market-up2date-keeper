@@ -72,7 +72,11 @@ cd ${repo}
 if [ -n "$releaseBranch" ]; then
   createReleaseBranch
 fi
-branch="raise-to-${convert_to_version}"
+if [ -n "$migrationBranch" ]; then
+  branch="$migrationBranch"
+else
+  branch="migrate-to-${convert_to_version}"
+fi
 git switch -c $branch
 
 updateMavenVersion

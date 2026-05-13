@@ -36,43 +36,9 @@ showMigratedRepos() {
 }
 
 migrateListOfRepos() {
-  printf "%s\n" \
-  "adobe-acrobat-sign-connector" \
-  "google-translate-connector" \
-  "stateful-datatable" \
-  "intellix-connector" \
-  "email-encryption" \
-  "express-importer" \
-  "cronjob" \
-  "kafka-connector" \
-  "master-detail" \
-  "sbb-connector" \
-  "srf-weather-connector" \
-  "metaproc-connector" \
-  "docker-connector" \
-  "graphql-demo" \
-  "threema-connector" \
-  "excel-importer" \
-  "salesforce-connector" \
-  "ups-connector" \
-  "open-weather-connector" \
-  "process-inspector" \
-  "mattermost-connector" \
-  "rtf-factory" \
-  "jsf-formarchive-util" \
-  "process-miner-viewer" \
-  "ai-assistant" \
-  "skribble-connector" \
-  "vertexai-google" \
-  "S4HANA-connector" \
-  "asana-connector" \
-  "gdpr-utils" \
-  "snowflake-connector" \
-  "keycloak-connector" \
-  "coffee-machine-connector" \
-  "case-mail-component-connector" |
+  collectRepos |
   while read repo_name; do
-  migrateRepo "$repo_name"
+    migrateRepo $repo_name
   done
   showMigratedRepos
 }

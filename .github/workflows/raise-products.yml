@@ -65,6 +65,7 @@ jobs:
 
       - name: Raise Products
         run: |
+          export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
           export migrationBranch=${{ inputs.migrationBranch }}

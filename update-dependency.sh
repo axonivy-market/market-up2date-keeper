@@ -42,7 +42,7 @@ fi
 
 ORG="axonivy-market"
 WORK_DIR=$(mktemp -d -t update-dep-XXXXXX)
-# trap "rm -rf ${WORK_DIR}" EXIT
+trap "rm -rf ${WORK_DIR}" EXIT
 
 updateProduct() {
   local product=$1
@@ -81,13 +81,20 @@ updateProduct() {
     fi
   else
     echo "  Updating to: ${groupId}:${artifactId}:${version}"
-    mvn -B versions:use-dep-version \
-      -Dincludes="${groupId}:${artifactId}" \
-      -DdepVersion="${version}" \
-      -DforceVersion=true
-    if [ $? -ne 0 ]; then
-      echo "  ❌ Update failed"
-      return 1
+    if ! grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
+      # Dependency does not exist yet — add it directly with version via sed
+      echo "  Dependency not in pom.xml yet, adding new block..."
+      sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n      <version>${version}</version>\\n    </dependency>" pom.xml
+    else
+      # Dependency exists — use Maven to update the version
+      mvn -B versions:use-dep-version \
+        -Dincludes="${groupId}:${artifactId}" \
+        -DdepVersion="${version}" \
+        -DforceVersion=true
+      if [ $? -ne 0 ]; then
+        echo "  ❌ Update failed"
+        return 1
+      fi
     fi
   fi
   

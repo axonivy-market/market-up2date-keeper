@@ -57,7 +57,6 @@ jobs:
 
       - name: Update dependency using script
         run: |
-          cd market-up2date-keeper
           chmod +x update-dependency.sh
           ./update-dependency.sh \
             "${{ inputs.product }}" \

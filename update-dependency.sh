@@ -24,7 +24,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ $# -lt 4 ]; then
   echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version]"
   echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0"
-  echo "Example (latest): $0 'idp-connector,market-core' master module com.axonivy.market lib"
+  echo "Example (no version): $0 'idp-connector,market-core' master module com.axonivy.market lib"
   exit 1
 fi
 
@@ -42,13 +42,15 @@ fi
 
 ORG="axonivy-market"
 WORK_DIR=$(mktemp -d -t update-dep-XXXXXX)
-trap "rm -rf ${WORK_DIR}" EXIT
+# trap "rm -rf ${WORK_DIR}" EXIT
 
 updateProduct() {
   local product=$1
-  local repo_url="git@github.com:${ORG}/${product}.git"
+  local repo_url="https://github.com/${ORG}/${product}.git"
   
   echo "→ ${product}"
+  echo "  URL: ${repo_url}"
+  echo "  Branch: ${branch}"
   cd "${WORK_DIR}"
   
   if ! git clone -b "${branch}" "${repo_url}" "${product}" 2>/dev/null; then
@@ -57,45 +59,60 @@ updateProduct() {
   fi
   
   cd "${product}"
+  echo "  Cloned to: $(pwd)"
   
   if [ ! -d "${project}" ]; then
-    echo "  ❌ Module not found"
+    echo "  ❌ Module not found: ${project}"
+    echo "  Available dirs: $(ls -d */ 2>/dev/null | tr '\n' ' ')"
     return 1
   fi
   
   cd "${project}"
+  echo "  Running Maven in: $(pwd)"
   if [ -z "$version" ]; then
-    if ! mvn -B versions:use-dep-version \
-      -Dincludes="${groupId}:${artifactId}" \
-      -DforceVersion=true > /dev/null 2>&1; then
-      echo "  ❌ Update failed"
-      return 1
+    echo "  Adding dependency: ${groupId}:${artifactId} (no version tag)"
+    # Check if dependency already exists
+    if grep -q "<groupId>${groupId}</groupId>" pom.xml && grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
+      # Exists: remove version tag if present
+      sed -i "/<groupId>${groupId}<\/groupId>/,/<\/dependency>/{ /<version>.*<\/version>/d; }" pom.xml
+    else
+      # Doesn't exist: add new dependency block without version
+      sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n    </dependency>" pom.xml
     fi
   else
-    if ! mvn -B versions:use-dep-version \
+    echo "  Updating to: ${groupId}:${artifactId}:${version}"
+    mvn -B versions:use-dep-version \
       -Dincludes="${groupId}:${artifactId}" \
       -DdepVersion="${version}" \
-      -DforceVersion=true > /dev/null 2>&1; then
+      -DforceVersion=true
+    if [ $? -ne 0 ]; then
       echo "  ❌ Update failed"
       return 1
     fi
   fi
   
   cd "${WORK_DIR}/${product}"
+  echo "  Checking for changes in: $(pwd)"
   if git diff --quiet; then
-    echo "  ℹ No changes"
+    echo "  ℹ No changes detected"
+    git status --short
     return 0
   fi
+  
+  echo "  Found changes:"
+  git diff --name-only
+  echo "  Staging and committing..."
 
   git add .
-  git commit -m "Update ${groupId}:${artifactId}${version:+ to $version}"
+  git commit -m "Add ${groupId}:${artifactId}${version:+ version $version}"
+  echo "  Commit: $(git log -1 --oneline)"
   
   if ! git push origin "HEAD:${branch}" 2>/dev/null; then
     echo "  ❌ Push failed"
     return 1
   fi
   
-  echo "  ✓ Updated"
+  echo "  ✓ Added and pushed"
 }
 
 echo "Updating: ${groupId}:${artifactId}${version:+ to $version}"

@@ -1,14 +1,15 @@
 #!/bin/bash
 #
-# Usage: replace-text.sh [products] <branch> <oldText> <newText>
+# Usage: replace-text.sh [products] <branch> <oldText> <newText> [fileExtension]
 #
 # Parameters:
-#   products - (Optional) Single product name, comma-separated list, or empty to use all repos
-#   branch   - Branch name (e.g. master, release/12.0)
-#   oldText  - Text/string to replace in matched source files
-#              (e.g. org.apache.commons.lang.StringUtils)
-#   newText  - Replacement text/string
-#              (e.g. org.apache.commons.lang3.StringUtils)
+#   products      - (Optional) Single product name, comma-separated list, or empty to use all repos
+#   branch        - Branch name (e.g. master, release/12.0)
+#   oldText       - Text/string to replace in matched source files
+#                   (e.g. org.apache.commons.lang.StringUtils)
+#   newText       - Replacement text/string
+#                   (e.g. org.apache.commons.lang3.StringUtils)
+#   fileExtension - (Optional) File extension to search/replace (e.g. java, xml, classpath). Default: java
 #
 # Examples:
 #   replace-text.sh alfresco-connector master \
@@ -63,6 +64,14 @@ replaceInProduct() {
 
   cd "${product}"
   echo "  Cloned to: $(pwd)"
+
+  # Check if any files with the extension exist
+  local file_count
+  file_count=$(find . -name "*.${fileExtension}" 2>/dev/null | wc -l)
+  if [ "${file_count}" -eq 0 ]; then
+    echo "  ℹ No *.${fileExtension} files found in $(pwd) — skipping"
+    return 0
+  fi
 
   # Count files containing the old text before replacement
   local match_count

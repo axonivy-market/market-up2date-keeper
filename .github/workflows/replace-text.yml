@@ -19,6 +19,11 @@ on:
         description: 'Replacement text/string (e.g. org.apache.commons.lang3.StringUtils)'
         required: true
         type: string
+      fileExtension:
+        description: 'File extension to search/replace (e.g. java, xml, classpath)'
+        required: false
+        default: 'java'
+        type: string
 
 permissions:
   contents: read
@@ -49,4 +54,5 @@ jobs:
             "${{ inputs.product }}" \
             "${{ inputs.branch }}" \
             "${{ inputs.oldText }}" \
-            "${{ inputs.newText }}"
+            "${{ inputs.newText }}" \
+            "${{ inputs.fileExtension }}"

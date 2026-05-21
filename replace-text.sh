@@ -5,7 +5,7 @@
 # Parameters:
 #   products - (Optional) Single product name, comma-separated list, or empty to use all repos
 #   branch   - Branch name (e.g. master, release/12.0)
-#   oldText  - Text/string to replace in all Java source files
+#   oldText  - Text/string to replace in matched source files
 #              (e.g. org.apache.commons.lang.StringUtils)
 #   newText  - Replacement text/string
 #              (e.g. org.apache.commons.lang3.StringUtils)
@@ -36,6 +36,7 @@ products=$1
 branch=$2
 oldText=$3
 newText=$4
+fileExtension=${5:-java}
 
 # Auto-collect repos if empty
 if [ -z "$products" ]; then
@@ -43,7 +44,7 @@ if [ -z "$products" ]; then
 fi
 
 ORG="axonivy-market"
-WORK_DIR=$(mktemp -d -t replace-import-XXXXXX)
+WORK_DIR=$(mktemp -d -t replace-text-XXXXXX)
 # trap "rm -rf ${WORK_DIR}" EXIT
 
 replaceInProduct() {
@@ -65,7 +66,7 @@ replaceInProduct() {
 
   # Count files containing the old text before replacement
   local match_count
-  match_count=$(grep -rl --include="*.java" "${oldText}" . 2>/dev/null | wc -l)
+  match_count=$(grep -rl --include="*.${fileExtension}" "${oldText}" . 2>/dev/null | wc -l)
 
   if [ "${match_count}" -eq 0 ]; then
     echo "  ℹ No occurrences of '${oldText}' found — skipping"
@@ -74,8 +75,8 @@ replaceInProduct() {
 
   echo "  Found '${oldText}' in ${match_count} file(s) — replacing..."
 
-  # Replace all occurrences in Java source files
-  find . -name "*.java" -exec sed -i "s|${oldText}|${newText}|g" {} +
+  # Replace all occurrences in matched file type
+  find . -name "*.${fileExtension}" -exec sed -i "s|${oldText}|${newText}|g" {} +
 
   echo "  Checking for changes in: $(pwd)"
   if git diff --quiet; then

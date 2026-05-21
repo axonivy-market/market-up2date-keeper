@@ -33,8 +33,6 @@ on:
         description: 'Java version to use for the migration (e.g. "25")'
         required: false
         default: '25'
-      
-
 
 permissions:
   contents: read
@@ -65,7 +63,6 @@ jobs:
 
       - name: Raise Products
         run: |
-          export IVY_JAVA_HOME=$JAVA_HOME_21_X64
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
           export migrationBranch=${{ inputs.migrationBranch }}

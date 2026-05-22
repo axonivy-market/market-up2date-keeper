@@ -28,7 +28,7 @@ on:
       releaseBranch:
         description: 'Name of the release branch to create (e.g. "release/13.0"). Only used when "createReleaseBranch" is true.'
         required: false
-        default: 'release/13'
+        default: 'release/13.0'
       javaVersion:
         description: 'Java version to use for the migration (e.g. "25")'
         required: false

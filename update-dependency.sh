@@ -3,7 +3,7 @@
 # Usage: update-dependency.sh [products] <branch> <module> <groupId> <artifactId> <version>
 #
 # Parameters:
-#   products   - (Optional) Single product name, comma-separated list, or empty to use all repos
+#   products   - Single product name, comma-separated list, or empty to use all repos
 #   branch     - Branch name (e.g. master, release/12.0)
 #   module     - Module name (e.g. idp-connector-demo)
 #   groupId    - Group ID of the dependency (e.g. com.axonivy.market)
@@ -21,7 +21,7 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
-if [ $# -lt 4 ]; then
+if [ $# -lt 6 ]; then
   echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version]"
   echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0"
   echo "Example (no version): $0 'idp-connector,market-core' master module com.axonivy.market lib"

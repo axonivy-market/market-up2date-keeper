@@ -13,9 +13,10 @@ artifactVersion() {
   fi
   # update version in pom.xml
   # loop through all folders
+  shopt -s nullglob
   for d in */ ; do
     echo "Updating $d"
-    mvn -f $d -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
-    mvn -f $d -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
+    mvn -f "$d" -B versions:set -DnewVersion=${newVersion} -DgenerateBackupPoms=false -DprocessAllModules=true
+    mvn -f "$d" -B versions:use-latest-versions -DgenerateBackupPoms=false -DprocessAllModules
   done
 }

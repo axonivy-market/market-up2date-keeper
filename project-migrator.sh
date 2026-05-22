@@ -19,7 +19,6 @@ downloadEngine(){
 
 raiseProject() {
   local gitDir=$(pwd)
-  local gitName=$(basename ${gitDir})
   echo "Searching projects in ${gitDir}"
   projects=()
   for ivyPref in $(find ${gitDir} -name "ch.ivyteam.ivy.designer.prefs"); do

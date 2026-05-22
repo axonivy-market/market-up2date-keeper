@@ -26,8 +26,8 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
-if [ $# -lt 4 ]; then
-  echo "Usage: $0 [products] <branch> <oldText> <newText>"
+if [ $# -lt 5 ]; then
+  echo "Usage: $0 [products] <branch> <oldText> <newText> [fileExtension] "
   echo "Example: $0 'alfresco-connector' master 'org.apache.commons.lang.StringUtils' 'org.apache.commons.lang3.StringUtils'"
   echo "Example (all repos): $0 '' master 'org.apache.commons.lang.StringUtils' 'org.apache.commons.lang3.StringUtils'"
   exit 1
@@ -46,7 +46,7 @@ fi
 
 ORG="axonivy-market"
 WORK_DIR=$(mktemp -d -t replace-text-XXXXXX)
-# trap "rm -rf ${WORK_DIR}" EXIT
+trap "rm -rf ${WORK_DIR}" EXIT
 
 replaceInProduct() {
   local product=$1

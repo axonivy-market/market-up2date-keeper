@@ -44,6 +44,22 @@ ORG="axonivy-market"
 WORK_DIR=$(mktemp -d -t update-dep-XXXXXX)
 trap "rm -rf ${WORK_DIR}" EXIT
 
+# Remove <version> element from a matching dependency in pom.xml
+deleteVersionIfPresent() {
+  local groupId="$1"; local artifactId="$2"
+  if command -v xmlstarlet >/dev/null 2>&1; then
+    xmlstarlet ed -P -L -d "/project/dependencies/dependency[groupId='${groupId}' and artifactId='${artifactId}']/version" pom.xml
+  else
+    perl -0777 -pe 's{(<dependency>.*?<groupId>'"${groupId}"'</groupId>.*?<artifactId>'"${artifactId}"'</artifactId>.*?)(<version>.*?</version>[ \t\r\n]*)}{\1}gs' -i pom.xml
+  fi
+}
+
+updateVersionWithMaven() {
+  local groupId="$1"; local artifactId="$2"; local version="$3"
+  mvn -B versions:use-dep-version -DgenerateBackupPoms=false  -Dincludes="${groupId}:${artifactId}" \
+    -DdepVersion="${version}" -DforceVersion=true
+}
+
 updateProduct() {
   local product=$1
   local repo_url="https://github.com/${ORG}/${product}.git"
@@ -74,24 +90,20 @@ updateProduct() {
     # Check if dependency already exists
     if grep -q "<groupId>${groupId}</groupId>" pom.xml && grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
       # Exists: remove version tag if present
-      sed -i "/<groupId>${groupId}<\/groupId>/,/<\/dependency>/{ /<version>.*<\/version>/d; }" pom.xml
+      deleteVersionIfPresent "${groupId}" "${artifactId}"
     else
-      # Doesn't exist: add new dependency block without version
+      # Not exist: add new dependency block without version
       sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n    </dependency>" pom.xml
     fi
   else
     echo "  Updating to: ${groupId}:${artifactId}:${version}"
     if ! grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
-      # Dependency does not exist yet — add it directly with version via sed
+      # Not exist: add directly with version via sed
       echo "  Dependency not in pom.xml yet, adding new block..."
       sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n      <version>${version}</version>\\n    </dependency>" pom.xml
     else
-      # Dependency exists — use Maven to update the version
-      mvn -B versions:use-dep-version \
-        -Dincludes="${groupId}:${artifactId}" \
-        -DdepVersion="${version}" \
-        -DforceVersion=true
-      if [ $? -ne 0 ]; then
+      # Exists: try to update via Maven
+      if ! updateVersionWithMaven "${groupId}" "${artifactId}" "${version}"; then
         echo "  ❌ Update failed"
         return 1
       fi

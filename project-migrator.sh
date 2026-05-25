@@ -4,7 +4,7 @@ if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi
 if [ -z "$engineUrl" ]; then
-  engineUrl="https://developer.axonivy.com/permalink/13.1.1/axonivy-engine.zip"
+  engineUrl="https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip"
 fi
 
 downloadEngine(){
@@ -18,8 +18,7 @@ downloadEngine(){
 }
 
 raiseProject() {
-  gitDir=$(pwd)
-  gitName=$(basename ${gitDir})
+  local gitDir=$(pwd)
   echo "Searching projects in ${gitDir}"
   projects=()
   for ivyPref in $(find ${gitDir} -name "ch.ivyteam.ivy.designer.prefs"); do

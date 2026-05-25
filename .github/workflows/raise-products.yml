@@ -7,18 +7,32 @@ on:
       product:
         description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
         required: false
+        default: ''
       version:
-        description: 'Snaphsot version to raise (e.g. "13.1.1-SNAPSHOT")'
+        description: 'Snapshot version to raise (e.g. "14.0.0-SNAPSHOT")'
         required: true
-        default: '13.1.1-SNAPSHOT'
+        default: '14.0.0-SNAPSHOT'
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/13.1.1/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip'
+      migrationBranch:
+        description: 'Branch to use for the migrating to the target branch. If not specified, the name will be "migrate-to-{version}" (e.g. "migrate-to-14.0.0-SNAPSHOT")'
+        required: false
+        default: ''
+      createReleaseBranch:
+        description: 'Whether to create a release branch (e.g. "release/13.0") from the main branch. If false, the main branch will be migrated directly.'
+        required: false
+        type: boolean
+        default: false
       releaseBranch:
-        description: 'Create a release branch to backup source code of the current version (e.g. "release/12.0"). This release branch should only be created for LTS versions.'
-        required: true
-        default: 'release/12.0'
+        description: 'Name of the release branch to create (e.g. "release/13.0"). Only used when "createReleaseBranch" is true.'
+        required: false
+        default: 'release/13.0'
+      javaVersion:
+        description: 'Java version to use for the migration (e.g. "25")'
+        required: false
+        default: '25'
 
 permissions:
   contents: read
@@ -35,7 +49,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: 21
+          java-version: ${{ inputs.javaVersion }}
 
       - name: Configure Git
         run: |
@@ -50,8 +64,8 @@ jobs:
       - name: Raise Products
         run: |
           export engineUrl=${{ inputs.engineUrl }}
-          export releaseBranch=${{ inputs.releaseBranch }}
-          export IVY_JAVA_HOME=$JAVA_HOME_21_X64
+          export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
+          export migrationBranch=${{ inputs.migrationBranch }}
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

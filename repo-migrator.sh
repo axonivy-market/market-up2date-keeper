@@ -26,7 +26,9 @@ cloneRepo() {
 
 updateMavenVersion() {
   artifactVersion $convert_to_version
+}
 
+commitChanges() {
   # commit changes
   git add .
   git commit -m "Update maven version to ${convert_to_version}"
@@ -38,10 +40,6 @@ updateActions() {
   git add .
   git commit -m "Update workflow actions to ${tag}"
 }
-
-if [ -z "$releaseBranch" ]; then
-  releaseBranch="release/12.0"
-fi
 
 createReleaseBranch() {
   echo "Create release branch ${releaseBranch}"
@@ -71,12 +69,19 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
-createReleaseBranch
-branch="raise-to-${convert_to_version}"
+if [ -n "$releaseBranch" ]; then
+  createReleaseBranch
+fi
+if [ -n "$migrationBranch" ]; then
+  branch="$migrationBranch"
+else
+  branch="migrate-to-${convert_to_version}"
+fi
 git switch -c $branch
 
-raiseProject
 updateMavenVersion
+raiseProject
+commitChanges
 updateActions
 push
 cd ..

@@ -1,0 +1,58 @@
+name: Replace text
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'GitHub repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
+        required: false
+        default: ''
+      branch:
+        description: 'Branch name (e.g. master, release/12.0, ...)'
+        required: true
+        type: string
+      oldText:
+        description: 'Text/string to replace in all Java source files (e.g. org.apache.commons.lang.StringUtils)'
+        required: true
+        type: string
+      newText:
+        description: 'Replacement text/string (e.g. org.apache.commons.lang3.StringUtils)'
+        required: true
+        type: string
+      fileExtension:
+        description: 'File extension to search/replace (e.g. java, xml, classpath)'
+        required: false
+        default: 'java'
+        type: string
+
+permissions:
+  contents: read
+
+
+jobs:
+  replace-text:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout market-up2date-keeper
+        uses: actions/checkout@v4
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          echo ${{ env.GH_TOKEN2 }} > token.sh
+          gh auth login --with-token < token.sh
+          gh auth setup-git
+        env:
+          GH_TOKEN2: ${{ secrets.GH }}
+
+      - name: Replace text using script
+        run: |
+          chmod +x replace-text.sh
+          ./replace-text.sh \
+            "${{ inputs.product }}" \
+            "${{ inputs.branch }}" \
+            "${{ inputs.oldText }}" \
+            "${{ inputs.newText }}" \
+            "${{ inputs.fileExtension }}"

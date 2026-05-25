@@ -1,0 +1,67 @@
+name: Update dependency
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'github repository name (e.g. alfresco-connector) or blank for all projects of the axonivy-market org'
+        required: false
+        default: ''
+      branch:
+        description: 'Branch name (e.g. master, release/12.0, ...)'
+        required: true
+        type: string
+      module:
+        description: 'Module name (e.g. idp-connector-demo)'
+        required: true
+        type: string
+      groupId:
+        description: 'Group ID of the dependency (e.g. com.axonivy.market)'
+        required: true
+        type: string
+      artifactId:
+        description: 'Artifact ID of the dependency (e.g. market-core)'
+        required: true
+        type: string
+      version:
+        description: 'Version of the dependency (e.g. 1.0.0)'
+        type: string
+
+permissions:
+  contents: read
+
+
+jobs:
+  update-lib:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout market-up2date-keeper
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          echo ${{ env.GH_TOKEN2 }} > token.sh
+          gh auth login --with-token < token.sh
+          gh auth setup-git
+        env:
+          GH_TOKEN2: ${{ secrets.GH }}
+
+      - name: Update dependency using script
+        run: |
+          chmod +x update-dependency.sh
+          ./update-dependency.sh \
+            "${{ inputs.product }}" \
+            "${{ inputs.branch }}" \
+            "${{ inputs.module }}" \
+            "${{ inputs.groupId }}" \
+            "${{ inputs.artifactId }}" \
+            "${{ inputs.version }}"

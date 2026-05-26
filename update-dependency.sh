@@ -78,6 +78,27 @@ insertDependencyBlock() {
   sed -i "/<\\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n${versionLine}${scopeLine}    </dependency>" pom.xml
 }
 
+updateOrInsertDependency() {
+  local groupId="$1"; local artifactId="$2"; local version="$3"; local scope="$4"
+  [ -n "$scope" ] && echo "  Scope: ${scope}"
+
+  if grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
+    if [ -n "$version" ]; then
+      echo "  Updating version: ${groupId}:${artifactId}:${version}"
+      if ! updateVersionWithMaven "${groupId}" "${artifactId}" "${version}"; then
+        echo "  ❌ Update failed"
+        return 1
+      fi
+    else
+      echo "  Removing version from: ${groupId}:${artifactId}"
+      deleteVersionIfPresent "${groupId}" "${artifactId}"
+    fi
+  else
+    echo "  Adding new dependency: ${groupId}:${artifactId}${version:+:${version}}"
+    insertDependencyBlock "${groupId}" "${artifactId}" "${version}" "${scope}"
+  fi
+}
+
 updateProduct() {
   local product=$1
   local repo_url="https://github.com/${ORG}/${product}.git"
@@ -93,41 +114,16 @@ updateProduct() {
   fi
   
   cd "${product}"
-  echo "  Cloned to: $(pwd)"
   
   if [ ! -d "${project}" ]; then
-    echo "  ❌ Module not found: ${project}"
-    echo "  Available dirs: $(ls -d */ 2>/dev/null | tr '\n' ' ')"
+    echo "  ❌ project not found: ${project}"
     return 1
   fi
   
   cd "${project}"
   echo "  Running Maven in: $(pwd)"
-  if [ -z "$version" ]; then
-    echo "  Adding dependency: ${groupId}:${artifactId} (no version tag)"
-    [ -n "$scope" ] && echo "  Scope: ${scope}"
-    # Check if dependency already exists
-    if grep -q "<groupId>${groupId}</groupId>" pom.xml && grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
-      # Exists: remove version tag if present
-      deleteVersionIfPresent "${groupId}" "${artifactId}"
-    else
-      # Not exist: add new dependency block without version
-      insertDependencyBlock "${groupId}" "${artifactId}" "" "${scope}"
-    fi
-  else
-    echo "  Updating to: ${groupId}:${artifactId}:${version}"
-    [ -n "$scope" ] && echo "  Scope: ${scope}"
-    if ! grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
-      # Not exist: add directly with version via sed
-      echo "  Dependency not in pom.xml yet, adding new block..."
-      insertDependencyBlock "${groupId}" "${artifactId}" "${version}" "${scope}"
-    else
-      # Exists: try to update via Maven
-      if ! updateVersionWithMaven "${groupId}" "${artifactId}" "${version}"; then
-        echo "  ❌ Update failed"
-        return 1
-      fi
-    fi
+  if ! updateOrInsertDependency "${groupId}" "${artifactId}" "${version}" "${scope}"; then
+    return 1
   fi
   
   cd "${WORK_DIR}/${product}"

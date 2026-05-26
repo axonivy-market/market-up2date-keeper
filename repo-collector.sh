@@ -44,5 +44,3 @@ collectRepos() {
     select(.language != null) | 
       .name'
 }
-
-collectRepos

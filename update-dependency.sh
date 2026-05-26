@@ -9,6 +9,7 @@
 #   groupId    - Group ID of the dependency (e.g. com.axonivy.market)
 #   artifactId - Artifact ID of the dependency (e.g. market-core)
 #   version    - Version of the dependency (e.g. 1.0.0)
+#   scope      - Optional dependency scope (e.g. compile, test, runtime)
 #
 # Examples:
 #   update-dependency.sh idp-connector master idp-connector-demo com.axonivy.market market-core 1.0.0
@@ -21,8 +22,8 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
-if [ $# -lt 6 ]; then
-  echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version]"
+if [ $# -lt 7 ]; then
+  echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version] [scope]"
   echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0"
   echo "Example (no version): $0 'idp-connector,market-core' master module com.axonivy.market lib"
   exit 1
@@ -34,6 +35,7 @@ project=$3
 groupId=$4
 artifactId=$5
 version=$6
+scope=$7
 
 # Auto-collect repos if empty
 if [ -z "$products" ]; then
@@ -58,6 +60,22 @@ updateVersionWithMaven() {
   local groupId="$1"; local artifactId="$2"; local version="$3"
   mvn -B versions:use-dep-version -DgenerateBackupPoms=false  -Dincludes="${groupId}:${artifactId}" \
     -DdepVersion="${version}" -DforceVersion=true
+}
+
+insertDependencyBlock() {
+  local groupId="$1"; local artifactId="$2"; local version="$3"; local scope="$4"
+  local versionLine=""
+  local scopeLine=""
+
+  if [ -n "$version" ]; then
+    versionLine="      <version>${version}</version>\\n"
+  fi
+
+  if [ -n "$scope" ]; then
+    scopeLine="      <scope>${scope}</scope>\\n"
+  fi
+
+  sed -i "/<\\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n${versionLine}${scopeLine}    </dependency>" pom.xml
 }
 
 updateProduct() {
@@ -87,20 +105,22 @@ updateProduct() {
   echo "  Running Maven in: $(pwd)"
   if [ -z "$version" ]; then
     echo "  Adding dependency: ${groupId}:${artifactId} (no version tag)"
+    [ -n "$scope" ] && echo "  Scope: ${scope}"
     # Check if dependency already exists
     if grep -q "<groupId>${groupId}</groupId>" pom.xml && grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
       # Exists: remove version tag if present
       deleteVersionIfPresent "${groupId}" "${artifactId}"
     else
       # Not exist: add new dependency block without version
-      sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n    </dependency>" pom.xml
+      insertDependencyBlock "${groupId}" "${artifactId}" "" "${scope}"
     fi
   else
     echo "  Updating to: ${groupId}:${artifactId}:${version}"
+    [ -n "$scope" ] && echo "  Scope: ${scope}"
     if ! grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
       # Not exist: add directly with version via sed
       echo "  Dependency not in pom.xml yet, adding new block..."
-      sed -i "/<\/dependencies>/i\\    <dependency>\\n      <groupId>${groupId}</groupId>\\n      <artifactId>${artifactId}</artifactId>\\n      <version>${version}</version>\\n    </dependency>" pom.xml
+      insertDependencyBlock "${groupId}" "${artifactId}" "${version}" "${scope}"
     else
       # Exists: try to update via Maven
       if ! updateVersionWithMaven "${groupId}" "${artifactId}" "${version}"; then
@@ -134,7 +154,7 @@ updateProduct() {
   echo "  ✓ Added and pushed"
 }
 
-echo "Updating: ${groupId}:${artifactId}${version:+ to $version}"
+echo "Updating: ${groupId}:${artifactId}${version:+ to $version}${scope:+ with scope $scope}"
 echo "Branch: ${branch} | Module: ${project}"
 echo ""
 

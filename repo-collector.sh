@@ -16,6 +16,7 @@ ignored_repos=(
   "e2e-test-utils"
   "iis-proxy"
   "axonivy-docs-common"
+  "axonivy-express"
 )
 
 # GitHub organization to work on

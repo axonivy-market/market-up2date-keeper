@@ -8,12 +8,12 @@
 #   module     - Module name (e.g. idp-connector-demo)
 #   groupId    - Group ID of the dependency (e.g. com.axonivy.market)
 #   artifactId - Artifact ID of the dependency (e.g. market-core)
-#   version    - Version of the dependency (e.g. 1.0.0)
-#   scope      - Optional dependency scope (e.g. compile, test, runtime)
+#   version    - Version of the dependency (e.g. 1.0.0); leave blank to remove <version> element, which allows Maven to use the version from parent pom or dependencyManagement
+#   scope      - Dependency scope (e.g. compile, test, runtime); leave blank to omit <scope>, which Maven treats as compile
 #
 # Examples:
-#   update-dependency.sh idp-connector master idp-connector-demo com.axonivy.market market-core 1.0.0
-#   update-dependency.sh "idp-connector,market-core" master module-name com.axonivy.market market-lib 2.0.0
+#   update-dependency.sh idp-connector master idp-connector-demo com.axonivy.market market-core 1.0.0 provided
+#   update-dependency.sh "idp-connector,market-core" master module-name com.axonivy.market market-lib 2.0.0 runtime
 #   update-dependency.sh "" master module-name com.axonivy.market market-lib 2.0.0  (all repos)
 #
 
@@ -24,7 +24,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 if [ $# -lt 7 ]; then
   echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version] [scope]"
-  echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0"
+  echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0 provided"
   echo "Example (no version): $0 'idp-connector,market-core' master module com.axonivy.market lib"
   exit 1
 fi
@@ -62,6 +62,23 @@ updateVersionWithMaven() {
     -DdepVersion="${version}" -DforceVersion=true
 }
 
+# Return 0 if a dependency with given groupId+artifactId exists inside <dependencies> in pom.xml
+dependencyExists() {
+  local groupId="$1"; local artifactId="$2"
+  if command -v xmlstarlet >/dev/null 2>&1; then
+    local cnt
+    cnt=$(xmlstarlet sel -t -v "count(/project/dependencies/dependency[groupId='${groupId}' and artifactId='${artifactId}'])" pom.xml 2>/dev/null || echo 0)
+    if [ "${cnt}" -gt 0 ]; then
+      return 0
+    else
+      return 1
+    fi
+  else
+    # Fallback: check with perl for a <dependency> block inside <dependencies>
+    perl -0777 -ne 'exit 0 if /<dependencies>.*?<dependency>.*?<groupId>\Q'"${groupId}"'\E<\/groupId>.*?<artifactId>\Q'"${artifactId}"'\E<\/artifactId>.*?<\/dependency>/s; exit 1' pom.xml
+  fi
+}
+
 insertDependencyBlock() {
   local groupId="$1"; local artifactId="$2"; local version="$3"; local scope="$4"
   local versionLine=""
@@ -82,7 +99,7 @@ updateOrInsertDependency() {
   local groupId="$1"; local artifactId="$2"; local version="$3"; local scope="$4"
   [ -n "$scope" ] && echo "  Scope: ${scope}"
 
-  if grep -q "<artifactId>${artifactId}</artifactId>" pom.xml; then
+  if dependencyExists "${groupId}" "${artifactId}"; then
     if [ -n "$version" ]; then
       echo "  Updating version: ${groupId}:${artifactId}:${version}"
       if ! updateVersionWithMaven "${groupId}" "${artifactId}" "${version}"; then

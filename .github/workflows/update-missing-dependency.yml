@@ -26,6 +26,11 @@ on:
       version:
         description: 'Version of the dependency (e.g. 1.0.0)'
         type: string
+      scope:
+        description: 'Scope of the dependency (e.g. compile, test, runtime); leave blank to omit <scope>, which Maven treats as compile'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -64,4 +69,5 @@ jobs:
             "${{ inputs.module }}" \
             "${{ inputs.groupId }}" \
             "${{ inputs.artifactId }}" \
-            "${{ inputs.version }}"
+            "${{ inputs.version }}" \
+            "${{ inputs.scope }}"

@@ -25,7 +25,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ $# -lt 7 ]; then
   echo "Usage: $0 [products] <branch> <module> <groupId> <artifactId> [version] [scope]"
   echo "Example: $0 'idp-connector,market-core' master module com.axonivy.market lib 2.0.0 provided"
-  echo "Example (no version): $0 'idp-connector,market-core' master module com.axonivy.market lib"
+  echo "Example (no version, no scope): $0 'idp-connector,market-core' master module com.axonivy.market lib '' ''"
   exit 1
 fi
 

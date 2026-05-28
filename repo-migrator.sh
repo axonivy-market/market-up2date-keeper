@@ -9,6 +9,7 @@ source "$DIR/workflow-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
+DEPRECATION_KEYWORD="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
 
 checkRepoExists() {
   exists=$(curl -s -o /dev/null -w "%{http_code}" "${repo_url}")
@@ -63,10 +64,35 @@ push() {
   fi
 }
 
+checkReadmeFilesForKeyword() {
+  local repo_name
+  repo_name=$(echo "$1" | tr -d '\r')
+  local repo_path="${gitDir}/${repo_name}/${repo_name}-product"
+  if [ ! -d "$repo_path" ]; then
+    echo "Product folder not found: ${repo_path}" >&2
+    return 1
+  fi
+
+  while IFS= read -r readme_file; do
+    if grep -qiF "$DEPRECATION_KEYWORD" "$readme_file"; then
+      echo "Found deprecation keyword in $readme_file" >&2
+      return 0
+    fi
+  done < <(find "$repo_path" -type f \( -iname "README" -o -iname "README.*" \))
+
+  return 1
+}
+
 
 checkRepoExists
 downloadEngine
 cloneRepo
+
+# Check README for keyword before migrating
+if checkReadmeFilesForKeyword "${repo}"; then
+  echo "Skipping migration for ${repo} because README contains keyword"
+  return 0 2>/dev/null || true
+fi
 
 cd ${repo}
 if [ -n "$releaseBranch" ]; then

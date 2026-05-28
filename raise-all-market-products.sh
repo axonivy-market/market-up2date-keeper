@@ -38,6 +38,7 @@ showMigratedRepos() {
 migrateListOfRepos() {
   collectRepos |
   while read repo_name; do
+    repo_name=$(echo "$repo_name" | tr -d '\r')
     migrateRepo $repo_name
   done
   showMigratedRepos

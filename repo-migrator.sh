@@ -7,8 +7,8 @@ source "$DIR/project-migrator.sh"
 source "$DIR/maven-migrator.sh"
 source "$DIR/workflow-migrator.sh"
 
-repo_url="https://github.com/axonivy-market/${repo_name}"
-clone_url="git@github.com:axonivy-market/${repo_name}.git"
+repo_url="https://github.com/Phuc-test/mailstore-connector"
+clone_url="https://github.com/Phuc-test/mailstore-connector.git"
 DEPRECATION_MESSAGE="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
 
 checkRepoExists() {
@@ -78,7 +78,7 @@ checkReadmeFilesForKeyword() {
       echo "Found deprecation message in $readme_file" >&2
       return 0
     fi
-  done < <(find "$repo_path" -type f \( -iname "README" -o -iname "README.*" \))
+  done < <(find "$repo_path" -maxdepth 1 -type f \( -iname "README" -o -iname "README.*" \))
 
   return 1
 }

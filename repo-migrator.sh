@@ -9,7 +9,7 @@ source "$DIR/workflow-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
-DEPRECATION_KEYWORD="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
+DEPRECATION_MESSAGE="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
 
 checkRepoExists() {
   exists=$(curl -s -o /dev/null -w "%{http_code}" "${repo_url}")
@@ -76,7 +76,7 @@ checkReadmeFilesForKeyword() {
   fi
 
   while IFS= read -r readme_file; do
-    if grep -qiF "$DEPRECATION_KEYWORD" "$readme_file"; then
+    if grep -qiF "$DEPRECATION_MESSAGE" "$readme_file"; then
       echo "Found deprecation keyword in $readme_file" >&2
       return 0
     fi
@@ -92,17 +92,16 @@ cloneRepo
 
 # Check README for keyword before migrating
 if checkReadmeFilesForKeyword "${repo}"; then
-  echo "Skipping migration for ${repo} because README contains keyword"
-  return 0 2>/dev/null || true
+  echo "Skipping migration for ${repo} because README contains deprecation keyword"
+else
+  cd ${repo}
+  createReleaseBranch
+  branch="raise-to-${convert_to_version}"
+  git switch -c $branch
+
+  raiseProject
+  updateMavenVersion
+  updateActions
+  push
+  cd ..
 fi
-
-cd ${repo}
-createReleaseBranch
-branch="raise-to-${convert_to_version}"
-git switch -c $branch
-
-raiseProject
-updateMavenVersion
-updateActions
-push
-cd ..

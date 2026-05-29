@@ -9,6 +9,7 @@ source "$DIR/workflow-migrator.sh"
 
 repo_url="https://github.com/axonivy-market/${repo_name}"
 clone_url="git@github.com:axonivy-market/${repo_name}.git"
+DEPRECATION_MESSAGE="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
 
 checkRepoExists() {
   exists=$(curl -s -o /dev/null -w "%{http_code}" "${repo_url}")
@@ -63,25 +64,48 @@ push() {
   fi
 }
 
+checkReadmeFilesForKeyword() {
+  local repo_name
+  local repo_path="${gitDir}/${repo_name}"
+  echo "Checking README files in ${repo_path} for deprecation message"
+  if [ ! -d "$repo_path" ]; then
+    echo "Product folder not found: ${repo_path}" >&2
+    return 1
+  fi
+
+  while IFS= read -r readme_file; do
+    if grep -qiF "$DEPRECATION_MESSAGE" "$readme_file"; then
+      echo "Found deprecation message in $readme_file" >&2
+      return 0
+    fi
+  done < <(find "$repo_path" -type f \( -iname "README" -o -iname "README.*" \))
+
+  return 1
+}
+
 
 checkRepoExists
 downloadEngine
 cloneRepo
 
-cd ${repo}
-if [ -n "$releaseBranch" ]; then
-  createReleaseBranch
-fi
-if [ -n "$migrationBranch" ]; then
-  branch="$migrationBranch"
+if checkReadmeFilesForKeyword "${repo}"; then
+  echo "Skipping migration for ${repo} because README contains deprecation keyword"
 else
-  branch="migrate-to-${convert_to_version}"
-fi
-git switch -c $branch
+  cd ${repo}
+  if [ -n "$releaseBranch" ]; then
+    createReleaseBranch
+  fi
+  if [ -n "$migrationBranch" ]; then
+    branch="$migrationBranch"
+  else
+    branch="migrate-to-${convert_to_version}"
+  fi
+  git switch -c $branch
 
-updateMavenVersion
-raiseProject
-commitChanges
-updateActions
-push
-cd ..
+  updateMavenVersion
+  raiseProject
+  commitChanges
+  updateActions
+  push
+  cd ..
+fi

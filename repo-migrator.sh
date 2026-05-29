@@ -7,8 +7,8 @@ source "$DIR/project-migrator.sh"
 source "$DIR/maven-migrator.sh"
 source "$DIR/workflow-migrator.sh"
 
-repo_url="https://github.com/Phuc-test/mailstore-connector"
-clone_url="https://github.com/Phuc-test/mailstore-connector.git"
+repo_url="https://github.com/axonivy-market/${repo_name}"
+clone_url="git@github.com:axonivy-market/${repo_name}.git"
 DEPRECATION_MESSAGE="*Note that this Market Extension is marked for deprecation. We recommend using the successor instead. **No new features** will be added to this extension; **only bug and security fixes** will be provided.*"
 
 checkRepoExists() {
@@ -65,8 +65,7 @@ push() {
 }
 
 checkReadmeFilesForKeyword() {
-  local repo_name
-  local repo_path="${gitDir}/${repo_name}"
+  local repo_path="${gitDir}/${repo}"
   echo "Checking README files in ${repo_path} for deprecation message"
   if [ ! -d "$repo_path" ]; then
     echo "Product folder not found: ${repo_path}" >&2

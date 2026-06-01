@@ -18,7 +18,6 @@ ignored_migration_repos=(
   "mobileapp"
   "process-miner-viewer"
   "ai-assistant"
-  "github-repo-manager"
   "e2e-test-utils"
   "iis-proxy"
   "axonivy-docs-common"

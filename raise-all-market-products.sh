@@ -7,24 +7,24 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
 # Additional repos to skip during migration due to not a legacy ivy project, deprecated, or need manual migration.
-ignored_migration_repos=(
-  # Not a legacy ivy project
-  "amazon-aws4-authenticator"
-  "process-miner-viewer"
-  "e2e-test-utils"
-  "iis-proxy"
-  "axonivy-docs-common"
+ignored_migration_repos=()
 
-  # Maintenance by Wawa
-  "mobileapp"
-  "portal"
-  "ai-assistant"
-  "axonivy-express"
+# Utility lib for Axon Ivy projects/engine
+ignored_migration_repos+=("iis-proxy")
+ignored_migration_repos+=("amazon-aws4-authenticator")
+ignored_migration_repos+=("process-miner-viewer")
+ignored_migration_repos+=("axonivy-docs-common")
+ignored_migration_repos+=("e2e-test-utils")
 
-  # Build by highly modified customer environment
-  "successfactors-connector"
-  "talentLink-connector"
-)
+# Maintained by team Wawa
+ignored_migration_repos+=("mobileapp")
+ignored_migration_repos+=("portal")
+ignored_migration_repos+=("ai-assistant")
+ignored_migration_repos+=("axonivy-express")
+
+# Built from highly customized environments from customers
+ignored_migration_repos+=("successfactors-connector")
+ignored_migration_repos+=("talentLink-connector")
 
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)

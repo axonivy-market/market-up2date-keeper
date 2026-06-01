@@ -5,18 +5,7 @@ ignored_repos=(
   "market"
   "market-monitor"
   "demo-projects"
-  "amazon-aws4-authenticator"
-  "portal"
-  "successfactors-connector"
-  "talentLink-connector"
-  "mobileapp"
-  "process-miner-viewer"
-  "ai-assistant"
   "github-repo-manager"
-  "e2e-test-utils"
-  "iis-proxy"
-  "axonivy-docs-common"
-  "axonivy-express"
 )
 
 # GitHub organization to work on

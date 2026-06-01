@@ -6,6 +6,22 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
+# Additional repos to skip during migration due to not a legacy ivy project, deprecated, or need manual migration.
+ignored_migration_repos=()
+
+# Utility lib for Axon Ivy projects/engine
+ignored_migration_repos+=("iis-proxy")
+ignored_migration_repos+=("amazon-aws4-authenticator")
+ignored_migration_repos+=("process-miner-viewer")
+ignored_migration_repos+=("axonivy-docs-common")
+ignored_migration_repos+=("e2e-test-utils")
+
+# Maintained by team Wawa
+ignored_migration_repos+=("mobileapp")
+ignored_migration_repos+=("portal")
+ignored_migration_repos+=("ai-assistant")
+ignored_migration_repos+=("axonivy-express")
+
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi
@@ -46,7 +62,8 @@ migrateListOfRepos() {
 migrateRepo() {
   cd ${gitDir}
   repo=$1
-  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]]; then
+  # Skip repos listed in either `ignored_repos` or `ignored_migration_repos`
+  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]] || [[ " ${ignored_migration_repos[@]} " =~ " ${repo} " ]]; then
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"

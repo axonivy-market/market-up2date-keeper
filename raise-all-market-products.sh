@@ -46,7 +46,8 @@ migrateListOfRepos() {
 migrateRepo() {
   cd ${gitDir}
   repo=$1
-  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]]; then
+  # Skip repos listed in either `ignored_repos` or `ignored_migration_repos`
+  if [[ " ${ignored_repos[@]} " =~ " ${repo} " ]] || [[ " ${ignored_migration_repos[@]} " =~ " ${repo} " ]]; then
     echo "Ignoring repo ${repo}"
   else
     echo "Migrating $repo to $convert_to_version"

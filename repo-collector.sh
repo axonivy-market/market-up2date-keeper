@@ -5,6 +5,12 @@ ignored_repos=(
   "market"
   "market-monitor"
   "demo-projects"
+  "github-repo-manager"
+)
+
+# Additional repos to skip during migration due to not a ivy project, deprecated, or need manual migration.
+# Add repo names here (one per line) if you want them to be skipped.
+ignored_migration_repos=(
   "amazon-aws4-authenticator"
   "portal"
   "successfactors-connector"

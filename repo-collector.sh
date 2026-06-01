@@ -8,22 +8,6 @@ ignored_repos=(
   "github-repo-manager"
 )
 
-# Additional repos to skip during migration due to not a ivy project, deprecated, or need manual migration.
-# Add repo names here (one per line) if you want them to be skipped.
-ignored_migration_repos=(
-  "amazon-aws4-authenticator"
-  "portal"
-  "successfactors-connector"
-  "talentLink-connector"
-  "mobileapp"
-  "process-miner-viewer"
-  "ai-assistant"
-  "e2e-test-utils"
-  "iis-proxy"
-  "axonivy-docs-common"
-  "axonivy-express"
-)
-
 # GitHub organization to work on
 # For testing, please use a personal org
 org=axonivy-market

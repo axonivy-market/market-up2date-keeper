@@ -6,6 +6,26 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
+# Additional repos to skip during migration due to not a legacy ivy project, deprecated, or need manual migration.
+ignored_migration_repos=(
+  # Not a legacy ivy project
+  "amazon-aws4-authenticator"
+  "process-miner-viewer"
+  "e2e-test-utils"
+  "iis-proxy"
+  "axonivy-docs-common"
+
+  # Maintenance by Wawa
+  "mobileapp"
+  "portal"
+  "ai-assistant"
+  "axonivy-express"
+
+  # Build by highly modified customer environment
+  "successfactors-connector"
+  "talentLink-connector"
+)
+
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi

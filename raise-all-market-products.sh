@@ -22,10 +22,6 @@ ignored_migration_repos+=("portal")
 ignored_migration_repos+=("ai-assistant")
 ignored_migration_repos+=("axonivy-express")
 
-# Built from highly customized environments from customers
-ignored_migration_repos+=("successfactors-connector")
-ignored_migration_repos+=("talentLink-connector")
-
 if [ -z "$workDir" ]; then
   workDir=$(mktemp -d -t projectConvertXXX)
 fi

@@ -34,7 +34,7 @@ raiseProject() {
     ${workDir}/engine/bin/EngineConfigCli migrate-project ${projects[@]}
 
     git add . #include new+moved files!
-    git commit -m "Raise project to ${convert_to_version}"
+    git commit -m "Chore: Raise project to ${convert_to_version}"
   else
     echo "No projects found in ${gitDir}"
   fi

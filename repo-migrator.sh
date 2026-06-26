@@ -20,7 +20,7 @@ checkRepoExists() {
 
 cloneRepo() {
   if ! [ -d "${repo}" ]; then
-    gh repo clone "${repo_url}"
+    gh repo clone "${repo_url}" -- -b "${targetBranch}"
   fi
 }
 
@@ -31,14 +31,14 @@ updateMavenVersion() {
 commitChanges() {
   # commit changes
   git add .
-  git commit -m "Update maven version to ${convert_to_version}"
+  git commit -m "Chore: Update project version to ${convert_to_version}"
 }
 
 updateActions() {
   tag="v6"
   updateWorkflows "${tag}"
   git add .
-  git commit -m "Update workflow actions to ${tag}"
+  git commit -m "CI: Update workflow actions to ${tag}"
 }
 
 createReleaseBranch() {
@@ -58,7 +58,7 @@ push() {
   else
     echo "Pushing changes of ${repo_name}"
     git push --set-upstream origin $branch
-    gh pr create --title "Migrate to ${convert_to_version} :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
+    gh pr create --head $branch --base ${targetBranch} --title "Migrate to ${convert_to_version} :camel:" --assignee "$GITHUB_ACTOR" --body "A friendly conversion provided by market-up2date-keeper :robot: :handshake: "
     echo "${repo_url}" >> ${workDir}/migrated-repos.txt
   fi
 }

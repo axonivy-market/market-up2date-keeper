@@ -69,6 +69,8 @@ downloadEngine
 cloneRepo
 
 cd ${repo}
+currentBranch="$(git branch --show-current)"
+echo "Current Git branch: ${currentBranch}"
 if [ -n "$releaseBranch" ]; then
   createReleaseBranch
 fi

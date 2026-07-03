@@ -29,6 +29,10 @@ on:
         description: 'Name of the release branch to create (e.g. "release/13.0"). Only used when "createReleaseBranch" is true.'
         required: false
         default: 'release/13.0'
+      targetBranch:
+        description: 'Target branch of the product repositories to raise from.'
+        required: false
+        default: 'master'
       javaVersion:
         description: 'Java version to use for the migration (e.g. "25")'
         required: false
@@ -66,6 +70,7 @@ jobs:
           export engineUrl=${{ inputs.engineUrl }}
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
           export migrationBranch=${{ inputs.migrationBranch }}
+          export targetBranch=${{ inputs.targetBranch }}
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
         shell: bash

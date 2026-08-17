@@ -66,7 +66,7 @@ jobs:
     uses: axonivy-market/github-workflows/.github/workflows/release-dev.yml@v6
     with:
       dryRun: \${{ fromJSON(github.event_name == 'schedule' && 'false' || github.event_name == 'workflow_dispatch' && github.event.inputs.dryRun || 'true') }}
-      javaVersion: '${java_version}'
+      javaVersion: ${java_version}
     secrets: inherit"
 }
 

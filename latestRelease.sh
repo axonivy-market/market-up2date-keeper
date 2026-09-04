@@ -5,12 +5,21 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 branch="${1:-master}"
+repoToCheck="${2:-}"
 
 . "${DIR}/repo-collector.sh"
 
+reposToCheck() {
+  if [ -n "$repoToCheck" ]; then
+    echo "$repoToCheck"
+  else
+    collectRepos
+  fi
+}
+
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  collectRepos |
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
   done
@@ -23,6 +32,28 @@ showLatestRelease() {
   latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
   latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
   echo "$latestTag;$latestRelease"
+}
+
+showProjectVersion() {
+  repo="$1"
+  projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${branch}" -f recursive=1 2> /dev/null |
+    jq -r '[.tree[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
+  if [ -z "$projectPath" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  projectContent=$(gh api --method GET "repos/${org}/${repo}/contents/${projectPath}" -f "ref=${branch}" 2> /dev/null |
+    jq -r '.content // "missing"')
+  if [ "$projectContent" = "missing" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  version=$(echo "$projectContent" | base64 --decode |
+    sed -n -E 's/^version[[:space:]]*=[[:space:]]*(.*)$/\1/p' |
+    head -n1)
+  echo "${version:-MISSING}"
 }
 
 checkFileStatus() {
@@ -57,13 +88,14 @@ checkRequiredFiles() {
 showLatestReleaseAndRequiredFileStatus() {
   repo="$1"
   latestReleaseData=$(showLatestRelease "$repo")
+  projectVersion=$(showProjectVersion "$repo")
   fileStatuses=$(checkRequiredFiles "$repo")
-  echo "$repo;$latestReleaseData;$fileStatuses"
+  echo "$repo;$latestReleaseData;$projectVersion;$fileStatuses"
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  collectRepos |
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
   done

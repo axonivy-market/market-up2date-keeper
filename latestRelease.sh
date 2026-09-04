@@ -26,27 +26,31 @@ showLatestRelease() {
 
 checkFileStatus() {
   repo="$1"
-  shift
+  readContent="$2"
+  shift 2
   filePaths=("$@")
   for path in "${filePaths[@]}"; do
     fileStatus=$(gh api "repos/${org}/${repo}/contents/${path}" 2> /dev/null | jq -r '.content // "missing"')
     if [ "$fileStatus" != "missing" ]; then
-      echo "Present(source $path)"
+      if [ "$readContent" = "true" ]; then
+        echo "$fileStatus" | base64 --decode | tr '\n' ' '
+        return
+      fi
+      echo "[x]$path"
       return
     fi
   done
-  echo "MISSING"
+  echo "MISSING $path"
 }
 
 checkRequiredFiles() {
   repo="$1"
-  # Check CODEOWNERS in multiple locations
-  codeownersLocation=$(checkFileStatus "$repo" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
+  codeowners=$(checkFileStatus "$repo" "true" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
   # Check other files
-  licenseStatus=$(checkFileStatus "$repo" "LICENSE")
-  securityStatus=$(checkFileStatus "$repo" "SECURITY.md")
-  codeOfConductStatus=$(checkFileStatus "$repo" "CODE_OF_CONDUCT.md")
-  echo "$codeownersLocation;$licenseStatus;$securityStatus;$codeOfConductStatus"
+  licenseStatus=$(checkFileStatus "$repo" "false" "LICENSE")
+  securityStatus=$(checkFileStatus "$repo" "false" "SECURITY.md")
+  codeOfConductStatus=$(checkFileStatus "$repo" "false" "CODE_OF_CONDUCT.md")
+  echo "$codeowners;$licenseStatus;$securityStatus;$codeOfConductStatus"
 }
 
 showLatestReleaseAndRequiredFileStatus() {

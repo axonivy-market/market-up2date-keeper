@@ -4,6 +4,7 @@
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+branch="${1:-master}"
 
 . "${DIR}/repo-collector.sh"
 
@@ -30,7 +31,7 @@ checkFileStatus() {
   shift 2
   filePaths=("$@")
   for path in "${filePaths[@]}"; do
-    fileStatus=$(gh api "repos/${org}/${repo}/contents/${path}" 2> /dev/null | jq -r '.content // "missing"')
+    fileStatus=$(gh api --method GET "repos/${org}/${repo}/contents/${path}" -f "ref=${branch}" 2> /dev/null | jq -r '.content // "missing"')
     if [ "$fileStatus" != "missing" ]; then
       if [ "$readContent" = "true" ]; then
         echo "$fileStatus" | base64 --decode | tr '\n' ' '

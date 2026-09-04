@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: Branch to inspect for required files
+        description: Branch to inspect for project files
         required: false
-        default: master
+        default: dev/14.0
   schedule:
     - cron:  '01 00 * * *'
 

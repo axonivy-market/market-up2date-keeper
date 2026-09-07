@@ -18,7 +18,7 @@ reposToCheck() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;Package Latest;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
@@ -56,6 +56,29 @@ showProjectVersion() {
   echo "${version:-MISSING}"
 }
 
+showPackageLatest() {
+  repo="$1"
+  productPom=$(gh api --method GET "repos/${org}/${repo}/contents/${repo}-product/pom.xml" -f "ref=${branch}" 2> /dev/null |
+    jq -r '.content // empty')
+  if [ -z "$productPom" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  groupId=$(echo "$productPom" | base64 --decode |
+    xmllint --xpath 'string(/*[local-name()="project"]/*[local-name()="groupId"][1])' - 2> /dev/null)
+  artifactId=$(echo "$productPom" | base64 --decode |
+    xmllint --xpath 'string(/*[local-name()="project"]/*[local-name()="artifactId"][1])' - 2> /dev/null)
+  if [ -z "$groupId" ] || [ -z "$artifactId" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  packageName="${groupId}.${artifactId}"
+  gh api "orgs/${org}/packages/maven/${packageName}/versions" 2> /dev/null |
+    jq -r 'if type == "array" then .[0].name // "MISSING" else "MISSING" end'
+}
+
 checkFileStatus() {
   repo="$1"
   readContent="$2"
@@ -78,11 +101,12 @@ checkFileStatus() {
 checkRequiredFiles() {
   repo="$1"
   codeowners=$(checkFileStatus "$repo" "true" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
+  packageLatest=$(showPackageLatest "$repo")
   # Check other files
   licenseStatus=$(checkFileStatus "$repo" "false" "LICENSE")
   securityStatus=$(checkFileStatus "$repo" "false" "SECURITY.md")
   codeOfConductStatus=$(checkFileStatus "$repo" "false" "CODE_OF_CONDUCT.md")
-  echo "$codeowners;$licenseStatus;$securityStatus;$codeOfConductStatus"
+  echo "$codeowners;$packageLatest;$licenseStatus;$securityStatus;$codeOfConductStatus"
 }
 
 showLatestReleaseAndRequiredFileStatus() {
@@ -94,7 +118,7 @@ showLatestReleaseAndRequiredFileStatus() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;Package Latest;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"

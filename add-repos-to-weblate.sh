@@ -10,8 +10,6 @@ echo "Using Weblate URL: $WEBLATE_URL"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "${DIR}/repo-collector.sh"
-source "${DIR}/weblate-functions.sh"
-source "${DIR}/github-webhook-functions.sh"
 
 isIgnored() {
   local repo=$1
@@ -22,6 +20,63 @@ isIgnored() {
   done
   return 1
 }
+
+
+addWeblateComponent() {
+  local REPO_NAME=$1
+  local REPO_URL=$2
+  local WEBLATE_URL=$3
+  local WEBLATE_TOKEN=$4
+  local WEBLATE_PROJECT=$5
+
+  curl --fail-with-body -sS -X POST "${WEBLATE_URL%/}/api/projects/${WEBLATE_PROJECT}/components/" \
+    -H "Authorization: Token $WEBLATE_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data-binary "{
+        \"name\": \"$REPO_NAME\",
+        \"slug\": \"$REPO_NAME\",
+        \"vcs\": \"github\",
+        \"repo\": \"$REPO_URL\",
+        \"branch\": \"master\",
+        \"push\": \"$REPO_URL\",
+        \"file_format\": \"markdown\",
+        \"filemask\": \"$REPO_NAME-product/README_*.md\",
+        \"new_base\": \"\",
+        \"new_lang\": \"none\",
+        \"template\": \"$REPO_NAME-product/README.md\",
+        \"edit_template\": \"false\",
+        \"id_auto_lock_error\": \"false\",
+        \"license\": \"Apache-2.0\",
+        \"commit_pending_age\": \"1\",
+        \"language_code_style\": \"\",
+        \"merge_style\": \"merge\",
+        \"source_language\": {
+            \"code\": \"en\"
+        },
+        \"language_regex\": \"^[A-Z]{2}$\"
+    }"
+}
+
+addGithubWebhook() {
+  local ORG=$1
+  local REPO_NAME=$2
+  local WEBLATE_URL=$3
+
+  local WEBHOOK_URL="${WEBLATE_URL%/}/hooks/github/"
+  
+  MSYS_NO_PATHCONV=1 gh api \
+    --method POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "/repos/$ORG/$REPO_NAME/hooks" \
+    -f name='web' \
+    -F active=true \
+    -F config[url]="$WEBHOOK_URL" \
+    -F config[content_type]='application/x-www-form-urlencoded' \
+    -F config[insecure_ssl]='0' \
+    -f events[]='push' 2>&1 || return $?
+}
+
 
 githubReposC | jq -c '.[] | 
   select(.archived == false) | 

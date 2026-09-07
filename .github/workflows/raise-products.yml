@@ -15,7 +15,7 @@ on:
       engineUrl:
         description: 'Axon Ivy Engine URL'
         required: true
-        default: 'https://developer.axonivy.com/permalink/sprint/axonivy-engine.zip'
+        default: 'https://developer.axonivy.com/permalink/milestone/axonivy-engine.zip'
       migrationBranch:
         description: 'Branch to use for the migrating to the target branch. If not specified, the name will be "migrate-to-{version}" (e.g. "migrate-to-14.0.0-SNAPSHOT")'
         required: false

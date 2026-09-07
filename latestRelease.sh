@@ -18,7 +18,7 @@ reposToCheck() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;Package Latest;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
@@ -31,8 +31,8 @@ showLatestRelease() {
   tags="repos/${org}/${repo}/tags"
   latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
   latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
-  packageLatest=$(showPackageLatest "$repo")
-  echo "$latestTag;$latestRelease;$packageLatest"
+  packageData=$(showPackageLatest "$repo")
+  echo "$latestTag;$latestRelease;$packageData"
 }
 
 showProjectVersion() {
@@ -62,8 +62,16 @@ showPackageLatest() {
   gh api graphql \
     -F "owner=${org}" \
     -F "name=${repo}" \
-    -f 'query=query($owner:String!, $name:String!) { repository(owner:$owner, name:$name) { packages(first:100, packageType:MAVEN) { nodes { name versions(first:1) { nodes { version } } } } } }' 2> /dev/null |
-    jq -r '[.data.repository.packages.nodes[]? | select(.name | endswith("-product")) | .versions.nodes[0].version][0] // "MISSING"'
+    -f 'query=query($owner:String!, $name:String!) { repository(owner:$owner, name:$name) { packages(first:30, packageType:MAVEN) { nodes { name versions(first:100) { nodes { version files(first:30) { nodes { updatedAt } } } } } } } }' 2> /dev/null |
+    jq -r '
+      [
+        .data.repository.packages.nodes[]?
+        | select(.name | endswith("-product"))
+        | .versions.nodes[]
+        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: (.version | split("-")[0] | split(".") | map(tonumber))}
+        | select(.date != "")
+      ]
+      | if length == 0 then "MISSING;MISSING" else max_by(.versionKey + [.date]) | [.version, .date] | join(";") end'
 }
 
 checkFileStatus() {
@@ -104,7 +112,7 @@ showLatestReleaseAndRequiredFileStatus() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;Package Latest;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"

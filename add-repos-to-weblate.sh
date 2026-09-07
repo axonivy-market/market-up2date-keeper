@@ -29,7 +29,7 @@ addWeblateComponent() {
   local WEBLATE_TOKEN=$4
   local WEBLATE_PROJECT=$5
 
-  curl -s -X POST "${WEBLATE_URL%/}/api/projects/${WEBLATE_PROJECT}/components/" \
+  curl --fail-with-body -sS -X POST "${WEBLATE_URL%/}/api/projects/${WEBLATE_PROJECT}/components/" \
     -H "Authorization: Token $WEBLATE_TOKEN" \
     -H "Content-Type: application/json" \
     --data-binary "{
@@ -74,7 +74,7 @@ addGithubWebhook() {
     -F config[url]="$WEBHOOK_URL" \
     -F config[content_type]='application/x-www-form-urlencoded' \
     -F config[insecure_ssl]='0' \
-    -f events[]='push' 2>&1
+    -f events[]='push' 2>&1 || return $?
 }
 
 

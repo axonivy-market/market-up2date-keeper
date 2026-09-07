@@ -13,16 +13,27 @@ ignored_repos=(
 org=axonivy-market
 
 githubRepos() {
-  ghApi="orgs/${org}/repos?per_page=100"
-  curl https://api.github.com/${ghApi}
+  githubReposPerPage="${githubReposPerPage:-100}"
+  ghApi="orgs/${org}/repos?per_page=${githubReposPerPage}&type=all"
+  if command -v gh >/dev/null 2>&1; then
+    gh api "${ghApi}"
+  else
+    curl -fsSL "https://api.github.com/${ghApi}"
+  fi
 }
 
 githubReposC(){
-  cache="/tmp/gh-${org}.json"
+  githubReposPerPage="${githubReposPerPage:-100}"
+  cache="/tmp/gh-${org}-repos-${githubReposPerPage}.json"
   if [ ! -f "${cache}" ]; then
     githubRepos > "${cache}"
   fi
   cat "${cache}"
+}
+
+collectAllRepos() {
+  githubReposC |
+    jq -r '.[] | .name'
 }
 
 collectRepos() {

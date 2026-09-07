@@ -4,12 +4,22 @@
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+branch="${1:-master}"
+repoToCheck="${2:-}"
 
 . "${DIR}/repo-collector.sh"
 
+reposToCheck() {
+  if [ -n "$repoToCheck" ]; then
+    echo "$repoToCheck"
+  else
+    collectRepos
+  fi
+}
+
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  collectRepos |
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
   done
@@ -24,41 +34,68 @@ showLatestRelease() {
   echo "$latestTag;$latestRelease"
 }
 
+showProjectVersion() {
+  repo="$1"
+  projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${branch}" -f recursive=1 2> /dev/null |
+    jq -r '[.tree[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
+  if [ -z "$projectPath" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  projectContent=$(gh api --method GET "repos/${org}/${repo}/contents/${projectPath}" -f "ref=${branch}" 2> /dev/null |
+    jq -r '.content // "missing"')
+  if [ "$projectContent" = "missing" ]; then
+    echo "MISSING"
+    return
+  fi
+
+  version=$(echo "$projectContent" | base64 --decode |
+    sed -n -E 's/^version[[:space:]]*=[[:space:]]*(.*)$/\1/p' |
+    head -n1)
+  echo "${version:-MISSING}"
+}
+
 checkFileStatus() {
   repo="$1"
-  shift
+  readContent="$2"
+  shift 2
   filePaths=("$@")
   for path in "${filePaths[@]}"; do
-    fileStatus=$(gh api "repos/${org}/${repo}/contents/${path}" 2> /dev/null | jq -r '.content // "missing"')
+    fileStatus=$(gh api --method GET "repos/${org}/${repo}/contents/${path}" -f "ref=${branch}" 2> /dev/null | jq -r '.content // "missing"')
     if [ "$fileStatus" != "missing" ]; then
-      echo "Present(source $path)"
+      if [ "$readContent" = "true" ]; then
+        echo "$fileStatus" | base64 --decode | tr '\n' ' '
+        return
+      fi
+      echo "[x]$path"
       return
     fi
   done
-  echo "MISSING"
+  echo "MISSING $path"
 }
 
 checkRequiredFiles() {
   repo="$1"
-  # Check CODEOWNERS in multiple locations
-  codeownersLocation=$(checkFileStatus "$repo" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
+  codeowners=$(checkFileStatus "$repo" "true" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
   # Check other files
-  licenseStatus=$(checkFileStatus "$repo" "LICENSE")
-  securityStatus=$(checkFileStatus "$repo" "SECURITY.md")
-  codeOfConductStatus=$(checkFileStatus "$repo" "CODE_OF_CONDUCT.md")
-  echo "$codeownersLocation;$licenseStatus;$securityStatus;$codeOfConductStatus"
+  licenseStatus=$(checkFileStatus "$repo" "false" "LICENSE")
+  securityStatus=$(checkFileStatus "$repo" "false" "SECURITY.md")
+  codeOfConductStatus=$(checkFileStatus "$repo" "false" "CODE_OF_CONDUCT.md")
+  echo "$codeowners;$licenseStatus;$securityStatus;$codeOfConductStatus"
 }
 
 showLatestReleaseAndRequiredFileStatus() {
   repo="$1"
   latestReleaseData=$(showLatestRelease "$repo")
+  projectVersion=$(showProjectVersion "$repo")
   fileStatuses=$(checkRequiredFiles "$repo")
-  echo "$repo;$latestReleaseData;$fileStatuses"
+  echo "$repo;$latestReleaseData;$projectVersion;$fileStatuses"
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  collectRepos |
+  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
   done

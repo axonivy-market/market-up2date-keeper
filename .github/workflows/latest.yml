@@ -1,6 +1,11 @@
 name: Latest status report
 on: 
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to inspect for project files
+        required: false
+        default: dev/14.0
   schedule:
     - cron:  '01 00 * * *'
 
@@ -16,7 +21,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Write CSV
-      run:  ./latestRelease.sh | tee MarketUp2DateStatus_$(date '+%Y%m%d_%H%M').csv
+      run:  ./latestRelease.sh "${{ inputs.branch }}" | tee MarketUp2DateStatus_$(date '+%Y%m%d_%H%M').csv
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Upload

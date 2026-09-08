@@ -22,6 +22,7 @@ Some steps have to be applied manually. Here we collect prominent changes for Ma
 - https://github.com/axonivy-market/snowflake-connector/pull/42
 - https://github.com/axonivy-market/coffee-machine-connector/pull/28
 - https://github.com/axonivy-market/msgraph-connector/pull/176
+- https://github.com/axonivy-market/portal/pull/3604
 
 ### What to change
 
@@ -49,6 +50,11 @@ Replace remaining `javax.ws.rs.*` types in process data, generated REST client m
 Reference commit: https://github.com/axonivy-market/deepl-connector/commit/9015867dcea6d82240814b2d87bf1a8bc2e06510
 
 #### High Priority
+
+##### Request API
+`ch.ivyteam.ivy.request.IProcessModelVersionRequest` was renamed to `ch.ivyteam.ivy.request.ProjectRequest`
+
+Reference commit: https://github.com/axonivy-market/portal/commit/49372388fd9feb34f52b931b5f2e0e2b2fda6109
 
 ##### OAuth2 Dependency
 All rest-client connectors that implement an OAuth2 Flow need an additonal dependency in the pom.xml:

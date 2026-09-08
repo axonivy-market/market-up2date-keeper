@@ -50,6 +50,18 @@ Reference commit: https://github.com/axonivy-market/deepl-connector/commit/90158
 
 #### High Priority
 
+##### OAuth2 Dependency
+All rest-client connectors that implement an OAuth2 Flow need an additonal dependency in the pom.xml:
+
+```xml
+    <dependency>
+      <groupId>com.axonivy.ivy.spi</groupId>
+      <artifactId>ivy-rest-jersey-spi</artifactId>
+    </dependency>
+```
+
+Reference commit: https://github.com/axonivy-market/S4HANA-connector/pull/33/changes/f9f8c666896a802452b8c065a087c72854f38c0a
+
 ##### REST client test config
 Do not override REST clients in tests through `IApplication`, `RestClients.of(app)`, or `RestClient.toBuilder()`. Configure the test REST client through `AppFixture.config(...)`, including URL, features, and authentication properties.
 

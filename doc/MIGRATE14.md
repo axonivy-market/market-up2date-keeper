@@ -49,6 +49,14 @@ Replace remaining `javax.ws.rs.*` types in process data, generated REST client m
 
 Reference commit: https://github.com/axonivy-market/deepl-connector/commit/9015867dcea6d82240814b2d87bf1a8bc2e06510
 
+##### JacksonJsonProvider
+Migrate `com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider`, to fix errors like:
+```
+The method configure(tools.jackson.jakarta.rs.json.JacksonJsonProvider, jakarta.ws.rs.core.Configuration) in the type ch.ivyteam.ivy.rest.client.mapper.JsonFeature is not applicable for the arguments (com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider, jakarta.ws.rs.core.Configuration)
+```
+
+Reference commit: https://github.com/axonivy-market/a-trust-connector/pull/113/changes/3bd51b9b6dd996cc91101ea9f3a934182f0cdfae
+
 #### High Priority
 
 ##### Request API

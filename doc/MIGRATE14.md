@@ -100,6 +100,10 @@ Fix warnings that fail the pipeline: remove unused imports, inline Javadoc-only 
 Reference commit: https://github.com/axonivy-market/msgraph-connector/commit/7c533c7c10d1ac5cc2ba07895adf8d8d244c5f5f
 
 ##### Ivy project version
-Check all `.ivyproject` files, especially modules that the automatic migration skipped, and update the project version to the current 14.0 migration level.
+Check all `.ivyproject` files, especially modules that the automatic migration skipped, and update the project version to the current 14.0 migration level. Skipped projects have a version lower than 140022.
 
-Reference commit: https://github.com/axonivy-market/deepl-connector/commit/b98ce8c0fa88f26b22439cbdb555f8524748cb90
+Fix: run the project conversion in vscode. Using the command: `ivyProjects.convertProject`
+
+Reference commits: 
+- https://github.com/axonivy-market/deepl-connector/commit/b98ce8c0fa88f26b22439cbdb555f8524748cb90
+- https://github.com/axonivy-market/a-trust-connector/pull/113/changes/45a13167833d33a4bf231739450fc719e2268c75

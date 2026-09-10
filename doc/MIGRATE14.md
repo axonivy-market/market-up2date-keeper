@@ -76,6 +76,24 @@ All rest-client connectors that implement an OAuth2 Flow need an additonal depen
 
 Reference commit: https://github.com/axonivy-market/S4HANA-connector/pull/33/changes/f9f8c666896a802452b8c065a087c72854f38c0a
 
+##### Program Extension API
+
+**New Artifact**:
+The artifact `com.axonivy.ivy.spi:ivy-process-extension-spi` is deprecated and should be replaced.
+The successor is `com.axonivy.ivy.api.extension:ivy-process-extension-api`.
+
+Reference commits: 
+- https://github.com/axonivy-market/azure-servicebus-connector/pull/22/changes/fe90251522c46a34e6cf291eea801d0e4368b954
+- https://github.com/axonivy/doc/commit/5fea93a27118aa3bc89f5c5d6fd8c63ae7edb759
+
+**Runtime classpath**:
+Extension bean implementations are not accessible at test-runtime from other projects.
+This seems to be a shortcoming of the current project-build-plugin.
+As workaround, set the dependency to scope 'compile' in order to wrap it with the main project.
+
+Reference commit:
+- https://github.com/axonivy-market/azure-servicebus-connector/pull/22/changes/46024dc900e41bc56f34cadf9ced5662172d75e1
+
 ##### REST client test config
 Do not override REST clients in tests through `IApplication`, `RestClients.of(app)`, or `RestClient.toBuilder()`. Configure the test REST client through `AppFixture.config(...)`, including URL, features, and authentication properties.
 
@@ -90,7 +108,6 @@ Reference commit: https://github.com/axonivy-market/deepl-connector/commit/66b29
 Remove custom `build-helper-maven-plugin` executions that add `src_generated/rest/...` as a source folder. Generated REST sources are now handled by the project build plugin.
 
 Reference commit: https://github.com/axonivy-market/deepl-connector/commit/7039b6ff9553c4c27a108ee8c78fbcf5bc9bc5d5
-
 
 #### Low Priority
 

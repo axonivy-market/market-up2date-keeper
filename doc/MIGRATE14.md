@@ -94,6 +94,11 @@ As workaround, set the dependency to scope 'compile' in order to wrap it with th
 Reference commit:
 - https://github.com/axonivy-market/azure-servicebus-connector/pull/22/changes/46024dc900e41bc56f34cadf9ced5662172d75e1
 
+##### DataCache API
+The `IDataCache.of(app)` takes no longer `IApplication` as input, but `ch.ivyteam.ivy.application.app.Application` instead.
+
+Reference commit: https://github.com/axonivy-market/kafka-connector/pull/81/changes/4ff0deeb43e66fa0bc887d77fef39a06f7b2c710
+
 ##### REST client test config
 Do not override REST clients in tests through `IApplication`, `RestClients.of(app)`, or `RestClient.toBuilder()`. Configure the test REST client through `AppFixture.config(...)`, including URL, features, and authentication properties.
 

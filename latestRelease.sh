@@ -18,7 +18,7 @@ reposToCheck() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"
@@ -31,7 +31,8 @@ showLatestRelease() {
   tags="repos/${org}/${repo}/tags"
   latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
   latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
-  echo "$latestTag;$latestRelease"
+  packageData=$(showPackageLatest "$repo")
+  echo "$latestTag;$latestRelease;$packageData"
 }
 
 showProjectVersion() {
@@ -54,6 +55,23 @@ showProjectVersion() {
     sed -n -E 's/^version[[:space:]]*=[[:space:]]*(.*)$/\1/p' |
     head -n1)
   echo "${version:-MISSING}"
+}
+
+showPackageLatest() {
+  repo="$1"
+  gh api graphql \
+    -F "owner=${org}" \
+    -F "name=${repo}" \
+    -f 'query=query($owner:String!, $name:String!) { repository(owner:$owner, name:$name) { packages(first:30, packageType:MAVEN) { nodes { name versions(first:100) { nodes { version files(first:30) { nodes { updatedAt } } } } } } } }' 2> /dev/null |
+    jq -r '
+      [
+        .data.repository.packages.nodes[]?
+        | select(.name | endswith("-product"))
+        | .versions.nodes[]
+        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: (.version | split("-")[0] | split(".") | map(tonumber))}
+        | select(.date != "")
+      ]
+      | if length == 0 then "MISSING;MISSING" else max_by(.versionKey + [.date]) | [.version, .date] | join(";") end'
 }
 
 checkFileStatus() {
@@ -94,7 +112,7 @@ showLatestReleaseAndRequiredFileStatus() {
 }
 
 latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
+  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
   reposToCheck |
   while read repo_name; do
     showLatestReleaseAndRequiredFileStatus "$repo_name"

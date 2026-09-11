@@ -4,7 +4,6 @@ set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "${DIR}/repo-collector.sh"
 
-githubReposPerPage=1000
 backupDir="${DIR}/target/backup/${org}"
 mkdir -p "${backupDir}"
 cd "${backupDir}"

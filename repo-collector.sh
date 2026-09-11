@@ -13,18 +13,11 @@ ignored_repos=(
 org=axonivy-market
 
 githubRepos() {
-  githubReposPerPage="${githubReposPerPage:-100}"
-  ghApi="orgs/${org}/repos?per_page=${githubReposPerPage}&type=all"
-  if command -v gh >/dev/null 2>&1; then
-    gh api "${ghApi}"
-  else
-    curl -fsSL "https://api.github.com/${ghApi}"
-  fi
+  gh api --paginate "orgs/${org}/repos?type=all" | jq -s 'add'
 }
 
 githubReposC(){
-  githubReposPerPage="${githubReposPerPage:-100}"
-  cache="/tmp/gh-${org}-repos-${githubReposPerPage}.json"
+  cache="/tmp/gh-${org}-repos.json"
   if [ ! -f "${cache}" ]; then
     githubRepos > "${cache}"
   fi

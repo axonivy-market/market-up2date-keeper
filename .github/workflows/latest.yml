@@ -21,12 +21,27 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-    - name: Write CSV
-      run:  ./latestRelease.sh "${{ inputs.branch }}" | tee MarketUp2DateStatus_$(date '+%Y%m%d_%H%M').csv
+    - name: Write JSON
+      run:  mkdir -p build && ./latestRelease.sh "${{ inputs.branch }}" | tee build/MarketUp2DateStatus.json
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Upload
-      uses: actions/upload-artifact@v4
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v5
       with:
-        name: MarketUp2DateStatus
-        path: MarketUp2DateStatus_*.csv
+        path: build
+
+  deploy:
+    #if: github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5

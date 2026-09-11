@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Prints a CSV formatted list of the latest release versions
+# Prints a JSON formatted list of the latest release versions
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,14 +17,6 @@ reposToCheck() {
   fi
 }
 
-latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  reposToCheck |
-  while read repo_name; do
-    showLatestReleaseAndRequiredFileStatus "$repo_name"
-  done
-}
-
 showLatestRelease() {
   repo="$1"
   releases="repos/${org}/${repo}/releases/latest"
@@ -32,13 +24,20 @@ showLatestRelease() {
   latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
   latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
   packageData=$(showPackageLatest "$repo")
-  echo "$latestTag;$latestRelease;$packageData"
+  latestTag=${latestTag:-None}
+  latestRelease=${latestRelease:-None}
+  packageData=${packageData:-'{"version":"MISSING","date":"MISSING"}'}
+  jq -c -n \
+    --arg latestTag "$latestTag" \
+    --arg latestRelease "$latestRelease" \
+    --argjson packageData "$packageData" \
+    '{"Latest_Tag": $latestTag, "Latest_Release": $latestRelease, "Package Latest": $packageData.version, "Package Date": $packageData.date}'
 }
 
 showProjectVersion() {
   repo="$1"
   projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${branch}" -f recursive=1 2> /dev/null |
-    jq -r '[.tree[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
+    jq -r '[(.tree // [])[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
   if [ -z "$projectPath" ]; then
     echo "MISSING"
     return
@@ -66,12 +65,12 @@ showPackageLatest() {
     jq -r '
       [
         .data.repository.packages.nodes[]?
-        | select(.name | endswith("-product"))
-        | .versions.nodes[]
-        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: (.version | split("-")[0] | split(".") | map(tonumber))}
+        | select((.name // "") | endswith("-product"))
+        | (.versions.nodes // [])[]
+        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: ((.version // "") | split("-")[0] | split(".") | map(try tonumber catch 0))}
         | select(.date != "")
       ]
-      | if length == 0 then "MISSING;MISSING" else max_by(.versionKey + [.date]) | [.version, .date] | join(";") end'
+      | if length == 0 then {version: "MISSING", date: "MISSING"} else max_by(.versionKey + [.date]) | {version, date} end'
 }
 
 checkFileStatus() {
@@ -100,7 +99,12 @@ checkRequiredFiles() {
   licenseStatus=$(checkFileStatus "$repo" "false" "LICENSE")
   securityStatus=$(checkFileStatus "$repo" "false" "SECURITY.md")
   codeOfConductStatus=$(checkFileStatus "$repo" "false" "CODE_OF_CONDUCT.md")
-  echo "$codeowners;$licenseStatus;$securityStatus;$codeOfConductStatus"
+  jq -c -n \
+    --arg codeowners "$codeowners" \
+    --arg licenseStatus "$licenseStatus" \
+    --arg securityStatus "$securityStatus" \
+    --arg codeOfConductStatus "$codeOfConductStatus" \
+    '{"CODE_OWNERS": $codeowners, "LICENSE": $licenseStatus, "SECURITY": $securityStatus, "CODE_OF_CONDUCT": $codeOfConductStatus}'
 }
 
 showLatestReleaseAndRequiredFileStatus() {
@@ -108,15 +112,27 @@ showLatestReleaseAndRequiredFileStatus() {
   latestReleaseData=$(showLatestRelease "$repo")
   projectVersion=$(showProjectVersion "$repo")
   fileStatuses=$(checkRequiredFiles "$repo")
-  echo "$repo;$latestReleaseData;$projectVersion;$fileStatuses"
+  jq -c -n \
+    --arg repo "$repo" \
+    --arg projectVersion "$projectVersion" \
+    --argjson latestReleaseData "$latestReleaseData" \
+    --argjson fileStatuses "$fileStatuses" \
+    '{"Repo": $repo} + $latestReleaseData + {"ProjectVersion": $projectVersion} + $fileStatuses'
 }
 
-latestReposCSV() {
-  echo "Repo;Latest_Tag;Latest_Release;Package Latest;Package Date;ProjectVersion;CODE_OWNERS;LICENSE;SECURITY;CODE_OF_CONDUCT"
-  reposToCheck |
-  while read repo_name; do
-    showLatestReleaseAndRequiredFileStatus "$repo_name"
-  done
+latestReposJSON() {
+  printf '[\n'
+  first=true
+  while read -r repo_name; do
+    repo_json=$(showLatestReleaseAndRequiredFileStatus "$repo_name")
+    if [ "$first" = true ]; then
+      first=false
+    else
+      printf ',\n'
+    fi
+    printf '%s' "$repo_json"
+  done < <(reposToCheck)
+  printf '\n]\n'
 }
 
-latestReposCSV
+latestReposJSON

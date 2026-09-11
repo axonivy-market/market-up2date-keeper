@@ -24,6 +24,9 @@ showLatestRelease() {
   latestTag=$(gh api "${tags}" 2> /dev/null | jq -r 'first.name // "None"')
   latestRelease=$(gh api "${releases}" 2> /dev/null | jq -r 'select(.draft == false).name // "None"')
   packageData=$(showPackageLatest "$repo")
+  latestTag=${latestTag:-None}
+  latestRelease=${latestRelease:-None}
+  packageData=${packageData:-'{"version":"MISSING","date":"MISSING"}'}
   jq -c -n \
     --arg latestTag "$latestTag" \
     --arg latestRelease "$latestRelease" \
@@ -34,7 +37,7 @@ showLatestRelease() {
 showProjectVersion() {
   repo="$1"
   projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${branch}" -f recursive=1 2> /dev/null |
-    jq -r '[.tree[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
+    jq -r '[(.tree // [])[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
   if [ -z "$projectPath" ]; then
     echo "MISSING"
     return
@@ -62,9 +65,9 @@ showPackageLatest() {
     jq -r '
       [
         .data.repository.packages.nodes[]?
-        | select(.name | endswith("-product"))
-        | .versions.nodes[]
-        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: (.version | split("-")[0] | split(".") | map(tonumber))}
+        | select((.name // "") | endswith("-product"))
+        | (.versions.nodes // [])[]
+        | {version, date: ([.files.nodes[]?.updatedAt] | max // ""), versionKey: ((.version // "") | split("-")[0] | split(".") | map(try tonumber catch 0))}
         | select(.date != "")
       ]
       | if length == 0 then {version: "MISSING", date: "MISSING"} else max_by(.versionKey + [.date]) | {version, date} end'

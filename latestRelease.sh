@@ -121,7 +121,8 @@ showLatestReleaseAndRequiredFileStatus() {
 }
 
 latestReposJSON() {
-  printf '[\n'
+  printf '{\n'
+  printf '"repos": [\n'
   first=true
   while read -r repo_name; do
     repo_json=$(showLatestReleaseAndRequiredFileStatus "$repo_name")
@@ -133,6 +134,7 @@ latestReposJSON() {
     printf '%s' "$repo_json"
   done < <(reposToCheck)
   printf '\n]\n'
+  printf '}\n'
 }
 
 latestReposJSON

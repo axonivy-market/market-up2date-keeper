@@ -137,4 +137,10 @@ latestReposJSON() {
   printf '}\n'
 }
 
-latestReposJSON
+latestReposCSV() {
+  jq -r '["Repo", "Latest_Release", "Latest_Tag", "Package Latest", "Package Date", "ProjectVersion", "CODE_OWNERS", "LICENSE", "SECURITY", "CODE_OF_CONDUCT"] as $preferred | (.repos | map(keys) | add | unique) as $available | ($preferred + ($available - $preferred)) as $fields | $fields, (.repos[] | [$fields[] as $field | .[$field]]) | @csv' "$1"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  latestReposJSON
+fi

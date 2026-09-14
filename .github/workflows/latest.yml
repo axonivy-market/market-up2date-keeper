@@ -22,16 +22,20 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Write JSON
-      run:  mkdir -p build && ./latestRelease.sh "${{ inputs.branch }}" | tee build/MarketUp2DateStatus.json
+      run: |
+        mkdir -p target/page
+        ./latestRelease.sh "${{ inputs.branch }}" | tee target/page/market.json
       env:
         GH_TOKEN: ${{ github.token }}
+    - name: Write CSV
+      run: source ./latestRelease.sh && latestReposCSV target/page/market.json > target/page/market.csv
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v5
       with:
-        path: build
+        path: target/page
 
   deploy:
-    #if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-latest
     permissions:

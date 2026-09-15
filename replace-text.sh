@@ -115,7 +115,10 @@ replaceInProduct() {
   git diff --name-only
 
   local effectiveCommitMessage=${commitMessage:-"Replace text in selected files"}
-  git switch -c "${prBranch}"
+  if ! git switch -c "${prBranch}"; then
+    echo "  ❌ Branch creation failed"
+    return 1
+  fi
   git add .
   git commit -m "${effectiveCommitMessage}"
   echo "  Commit: $(git log -1 --oneline)"
@@ -147,8 +150,16 @@ echo "Branch:    ${branch}"
 echo ""
 
 IFS=',' read -ra product_list <<< "$products"
+failed_products=()
 for product in "${product_list[@]}"; do
   product=$(echo "$product" | xargs)
   [ -z "$product" ] && continue
-  replaceInProduct "$product" || true
+  if ! replaceInProduct "$product"; then
+    failed_products+=("${product}")
+  fi
 done
+
+if [ "${#failed_products[@]}" -gt 0 ]; then
+  echo "❌ Failed products: ${failed_products[*]}"
+  exit 1
+fi

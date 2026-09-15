@@ -15,13 +15,13 @@ on:
         description: 'Replacement pairs, comma-separated: oldText|newText,oldText2|newText2'
         required: true
         type: string
-      fileExtension:
-        description: 'File extension to search/replace (e.g. java, xml, classpath)'
+      fileNamePattern:
+        description: 'POSIX extended regex passed to find -regex (e.g. .*\.(java|xml)$)'
         required: false
-        default: 'java'
+        default: '.*\.java$'
         type: string
       commitMessage:
-        description: 'Optional commit message; defaults to Replace text in *.<fileExtension> files'
+        description: 'Optional commit message; defaults to Replace text in selected files'
         required: false
         default: ''
         type: string
@@ -66,9 +66,9 @@ jobs:
           ./replace-text.sh \
             "${{ inputs.product }}" \
             "${{ inputs.branch }}" \
-            "${replacement_args[@]}" \
-            "${{ inputs.fileExtension }}"
+            "${replacement_args[@]}"
         env:
           REPLACEMENTS: ${{ inputs.replacements }}
           COMMIT_MESSAGE: ${{ inputs.commitMessage }}
           PR_BRANCH: ${{ inputs.prBranch }}
+          FILE_NAME_PATTERN: ${{ inputs.fileNamePattern }}

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Usage: replace-text.sh [products] <branch> <oldText>|<newText> [<oldText>|<newText> ...] [fileExtension]
+# Usage: replace-text.sh [products] <branch> <oldText>|<newText> [<oldText>|<newText> ...]
 #
 # Parameters:
 #   products      - (Optional) Single product name, comma-separated list, or empty to use all repos
@@ -8,7 +8,7 @@
 #   oldText|newText
 #                 - Replacement pair. May be repeated for multiple replacements.
 #                   (e.g. org.apache.commons.lang.StringUtils|org.apache.commons.lang3.StringUtils)
-#   fileExtension - (Optional) File extension to search/replace (e.g. java, xml, classpath). Default: java
+#   FILE_NAME_PATTERN - POSIX extended regex passed directly to find -regex (e.g. .*\.(java|xml)$). Defaults to .*\.java$.
 #
 # Examples:
 #   replace-text.sh alfresco-connector master \
@@ -25,7 +25,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
 printUsage() {
-  echo "Usage: $0 [products] <branch> <oldText>|<newText> [<oldText>|<newText> ...] [fileExtension]"
+  echo "Usage: FILE_NAME_PATTERN='.*\\.(java|xml)$' $0 [products] <branch> <oldText>|<newText> [<oldText>|<newText> ...]"
   echo "Example: $0 'alfresco-connector' master 'org.apache.commons.lang.StringUtils|org.apache.commons.lang3.StringUtils'"
   echo "Example (all repos): $0 '' master 'org.apache.commons.lang.StringUtils|org.apache.commons.lang3.StringUtils' 'javax.ws.rs|jakarta.ws.rs'"
 }
@@ -39,7 +39,7 @@ products=$1
 branch=$2
 shift 2
 
-fileExtension=java
+fileNamePattern=${FILE_NAME_PATTERN:-'.*\.java$'}
 commitMessage=${COMMIT_MESSAGE:-}
 replacements=()
 sedExpressions=()
@@ -59,14 +59,7 @@ addReplacement() {
 }
 
 while [ $# -gt 0 ]; do
-  if [[ "$1" == *"|"* ]]; then
-    addReplacement "$1"
-  elif [ $# -eq 1 ]; then
-    fileExtension=$1
-  else
-    echo "Invalid replacement '${1}'. Expected <oldText>|<newText>."
-    exit 1
-  fi
+  addReplacement "$1"
   shift
 done
 
@@ -102,16 +95,15 @@ replaceInProduct() {
   cd "${product}"
   echo "  Cloned to: $(pwd)"
 
-  # Check if any files with the extension exist
   local file_count
-  file_count=$(find . -name "*.${fileExtension}" 2>/dev/null | wc -l)
+  file_count=$(find . -regextype posix-extended -type f ! -path './.git/*' -regex "${fileNamePattern}" 2>/dev/null | wc -l)
   if [ "${file_count}" -eq 0 ]; then
-    echo "  ℹ No *.${fileExtension} files found in $(pwd) — skipping"
+    echo "  ℹ No matching files found in $(pwd) — skipping"
     return 0
   fi
 
   echo "  Replacing ${#replacements[@]} text pair(s)..."
-  find . -name "*.${fileExtension}" -exec sed -i "${sedExpressions[@]}" {} +
+  find . -regextype posix-extended -type f ! -path './.git/*' -regex "${fileNamePattern}" -exec sed -i "${sedExpressions[@]}" {} +
 
   echo "  Checking for changes in: $(pwd)"
   if git diff --quiet; then
@@ -122,7 +114,7 @@ replaceInProduct() {
   echo "  Changed files:"
   git diff --name-only
 
-  local effectiveCommitMessage=${commitMessage:-"Replace text in *.${fileExtension} files"}
+  local effectiveCommitMessage=${commitMessage:-"Replace text in selected files"}
   git switch -c "${prBranch}"
   git add .
   git commit -m "${effectiveCommitMessage}"

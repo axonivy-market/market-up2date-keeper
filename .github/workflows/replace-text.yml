@@ -64,10 +64,12 @@ jobs:
           done <<< "$(printf '%s' "${REPLACEMENTS}" | tr ',' '\n')"
 
           ./replace-text.sh \
-            "${{ inputs.product }}" \
-            "${{ inputs.branch }}" \
+            "${PRODUCT}" \
+            "${BRANCH}" \
             "${replacement_args[@]}"
         env:
+          PRODUCT: ${{ inputs.product }}
+          BRANCH: ${{ inputs.branch }}
           REPLACEMENTS: ${{ inputs.replacements }}
           COMMIT_MESSAGE: ${{ inputs.commitMessage }}
           PR_BRANCH: ${{ inputs.prBranch }}

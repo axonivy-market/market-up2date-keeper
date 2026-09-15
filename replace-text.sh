@@ -39,6 +39,22 @@ products=$1
 branch=$2
 shift 2
 
+if [ -z "${branch}" ] || ! git check-ref-format --branch "${branch}" >/dev/null 2>&1; then
+  echo "Invalid branch name: ${branch}"
+  exit 1
+fi
+
+if [ -n "${products}" ]; then
+  IFS=',' read -ra requested_products <<< "${products}"
+  for requested_product in "${requested_products[@]}"; do
+    requested_product=$(echo "${requested_product}" | xargs)
+    if [[ ! "${requested_product}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+      echo "Invalid product name: ${requested_product}"
+      exit 1
+    fi
+  done
+fi
+
 fileNamePattern=${FILE_NAME_PATTERN:-'.*\.java$'}
 commitMessage=${COMMIT_MESSAGE:-}
 replacements=()

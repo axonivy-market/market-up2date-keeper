@@ -11,22 +11,29 @@ on:
         description: 'Branch name (e.g. master, release/12.0, ...)'
         required: true
         type: string
-      oldText:
-        description: 'Text/string to replace in all Java source files (e.g. org.apache.commons.lang.StringUtils)'
+      replacements:
+        description: 'Replacement pairs, comma-separated: oldText|newText,oldText2|newText2'
         required: true
         type: string
-      newText:
-        description: 'Replacement text/string (e.g. org.apache.commons.lang3.StringUtils)'
-        required: true
-        type: string
-      fileExtension:
-        description: 'File extension to search/replace (e.g. java, xml, classpath)'
+      fileNamePattern:
+        description: 'POSIX extended regex passed to find -regex (e.g. .*\.(java|xml)$)'
         required: false
-        default: 'java'
+        default: '.*\.java$'
+        type: string
+      commitMessage:
+        description: 'Optional commit message; defaults to Replace text in selected files'
+        required: false
+        default: ''
+        type: string
+      prBranch:
+        description: 'Optional pull request branch name; defaults to a unique generated name'
+        required: false
+        default: ''
         type: string
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 
 jobs:
@@ -50,9 +57,20 @@ jobs:
       - name: Replace text using script
         run: |
           chmod +x replace-text.sh
+          replacement_args=()
+          while IFS= read -r replacement; do
+            [ -z "${replacement}" ] && continue
+            replacement_args+=("${replacement}")
+          done <<< "$(printf '%s' "${REPLACEMENTS}" | tr ',' '\n')"
+
           ./replace-text.sh \
-            "${{ inputs.product }}" \
-            "${{ inputs.branch }}" \
-            "${{ inputs.oldText }}" \
-            "${{ inputs.newText }}" \
-            "${{ inputs.fileExtension }}"
+            "${PRODUCT}" \
+            "${BRANCH}" \
+            "${replacement_args[@]}"
+        env:
+          PRODUCT: ${{ inputs.product }}
+          BRANCH: ${{ inputs.branch }}
+          REPLACEMENTS: ${{ inputs.replacements }}
+          COMMIT_MESSAGE: ${{ inputs.commitMessage }}
+          PR_BRANCH: ${{ inputs.prBranch }}
+          FILE_NAME_PATTERN: ${{ inputs.fileNamePattern }}

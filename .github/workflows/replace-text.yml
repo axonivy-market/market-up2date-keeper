@@ -11,12 +11,8 @@ on:
         description: 'Branch name (e.g. master, release/12.0, ...)'
         required: true
         type: string
-      oldText:
-        description: 'Text/string to replace in all Java source files (e.g. org.apache.commons.lang.StringUtils)'
-        required: true
-        type: string
-      newText:
-        description: 'Replacement text/string (e.g. org.apache.commons.lang3.StringUtils)'
+      replacements:
+        description: 'Replacement pairs, comma-separated: oldText|newText,oldText2|newText2'
         required: true
         type: string
       fileExtension:
@@ -50,9 +46,16 @@ jobs:
       - name: Replace text using script
         run: |
           chmod +x replace-text.sh
+          replacement_args=()
+          while IFS= read -r replacement; do
+            [ -z "${replacement}" ] && continue
+            replacement_args+=("${replacement}")
+          done <<< "$(printf '%s' "${REPLACEMENTS}" | tr ',' '\n')"
+
           ./replace-text.sh \
             "${{ inputs.product }}" \
             "${{ inputs.branch }}" \
-            "${{ inputs.oldText }}" \
-            "${{ inputs.newText }}" \
+            "${replacement_args[@]}" \
             "${{ inputs.fileExtension }}"
+        env:
+          REPLACEMENTS: ${{ inputs.replacements }}

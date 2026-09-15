@@ -40,6 +40,7 @@ branch=$2
 shift 2
 
 fileExtension=java
+commitMessage=${COMMIT_MESSAGE:-}
 replacements=()
 sedExpressions=()
 
@@ -121,7 +122,10 @@ replaceInProduct() {
   git diff --name-only
 
   git add .
-  git commit -m "Replace text in *.${fileExtension} files"
+  if [ -z "${commitMessage}" ]; then
+    commitMessage="Replace text in *.${fileExtension} files"
+  fi
+  git commit -m "${commitMessage}"
   echo "  Commit: $(git log -1 --oneline)"
 
   if ! git push origin "HEAD:${branch}" 2>/dev/null; then

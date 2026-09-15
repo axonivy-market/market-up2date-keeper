@@ -20,6 +20,11 @@ on:
         required: false
         default: 'java'
         type: string
+      commitMessage:
+        description: 'Optional commit message; defaults to Replace text in *.<fileExtension> files'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -59,3 +64,4 @@ jobs:
             "${{ inputs.fileExtension }}"
         env:
           REPLACEMENTS: ${{ inputs.replacements }}
+          COMMIT_MESSAGE: ${{ inputs.commitMessage }}

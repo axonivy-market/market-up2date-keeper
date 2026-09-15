@@ -23,16 +23,16 @@ jobs:
       uses: actions/checkout@v3
     - name: Write JSON
       run: |
-        mkdir -p target/page
-        ./latestRelease.sh "${{ inputs.branch }}" | tee target/page/market.json
+        mkdir -p page/data
+        ./latestRelease.sh "${{ inputs.branch }}" | tee page/data/market.json
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Write CSV
-      run: source ./latestRelease.sh && latestReposCSV target/page/market.json > target/page/market.csv
+      run: source ./latestRelease.sh && latestReposCSV page/data/market.json > page/data/market.csv
     - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v5
       with:
-        path: target/page
+        path: page
 
   deploy:
     if: github.ref == 'refs/heads/master'

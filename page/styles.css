@@ -1,0 +1,253 @@
+:root {
+	color-scheme: light;
+	--ink: #17212b;
+	--muted: #65717c;
+	--line: #d8dee4;
+	--surface: #ffffff;
+	--surface-muted: #f4f6f8;
+	--brand: #007095;
+	--brand-dark: #00546f;
+	--danger: #b42318;
+	--danger-bg: #fef3f2;
+	--success: #18794e;
+	--success-bg: #edf8f2;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	min-width: 320px;
+	margin: 0;
+	color: var(--ink);
+	background:
+		linear-gradient(115deg, rgb(0 112 149 / 8%), transparent 34rem),
+		var(--surface-muted);
+	font-family: "Aptos", "Segoe UI", sans-serif;
+}
+
+header {
+	padding: 2rem clamp(1rem, 4vw, 3.5rem) 1.5rem;
+	border-top: 5px solid var(--brand);
+	border-bottom: 1px solid var(--line);
+	background: rgb(255 255 255 / 88%);
+}
+
+.heading-row,
+.table-toolbar {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+h1 {
+	margin: 0;
+	font-size: clamp(1.65rem, 3vw, 2.35rem);
+	line-height: 1.1;
+	letter-spacing: 0;
+}
+
+.subtitle {
+	max-width: 48rem;
+	margin: 0.6rem 0 0;
+	color: var(--muted);
+	font-size: 0.98rem;
+}
+
+.summary {
+	flex: 0 0 auto;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+main {
+	padding: 1.5rem clamp(1rem, 4vw, 3.5rem) 3rem;
+}
+
+.table-shell {
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	background: var(--surface);
+	box-shadow: 0 10px 32px rgb(23 33 43 / 8%);
+}
+
+.table-toolbar {
+	align-items: center;
+	min-height: 3.5rem;
+	padding: 0.65rem 0.9rem;
+	border-bottom: 1px solid var(--line);
+}
+
+.filter-note {
+	margin: 0;
+	color: var(--muted);
+	font-size: 0.875rem;
+}
+
+button {
+	min-height: 2.25rem;
+	padding: 0.45rem 0.8rem;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--ink);
+	background: var(--surface);
+	font: inherit;
+	font-size: 0.875rem;
+	cursor: pointer;
+}
+
+button:hover {
+	border-color: var(--brand);
+	color: var(--brand-dark);
+	background: #f0f9fc;
+}
+
+button:focus-visible,
+a:focus-visible {
+	outline: 3px solid rgb(0 112 149 / 28%);
+	outline-offset: 2px;
+}
+
+#repository-table {
+	min-height: 28rem;
+}
+
+.loading,
+.error {
+	display: grid;
+	min-height: 28rem;
+	place-items: center;
+	padding: 2rem;
+	color: var(--muted);
+	text-align: center;
+}
+
+.error {
+	color: var(--danger);
+}
+
+.repo-link {
+	color: var(--brand-dark);
+	font-weight: 650;
+	text-decoration: none;
+}
+
+.repo-link:hover {
+	text-decoration: underline;
+}
+
+.status {
+	display: inline-block;
+	max-width: 100%;
+	padding: 0.15rem 0.45rem;
+	border-radius: 4px;
+	overflow: hidden;
+	font-size: 0.78rem;
+	font-weight: 650;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.status--missing {
+	color: var(--danger);
+	background: var(--danger-bg);
+}
+
+.status--present {
+	color: var(--success);
+	background: var(--success-bg);
+}
+
+.tabulator {
+	border: 0;
+	background: var(--surface);
+	font-size: 0.86rem;
+}
+
+.tabulator .tabulator-header {
+	border-bottom: 1px solid var(--line);
+	color: var(--ink);
+	background: #eef2f4;
+}
+
+.tabulator .tabulator-header .tabulator-col {
+	border-right-color: var(--line);
+	background: #eef2f4;
+}
+
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
+	background: #e5ebee;
+}
+
+.tabulator .tabulator-header-filter input {
+	min-height: 1.9rem;
+	border: 1px solid #b7c0c8;
+	border-radius: 4px;
+	color: var(--ink);
+	background: var(--surface);
+	font: inherit;
+}
+
+.tabulator .tabulator-row {
+	border-bottom-color: #e7ebee;
+	background: var(--surface);
+}
+
+.tabulator .tabulator-row:nth-child(even) {
+	background: #fafbfc;
+}
+
+.tabulator .tabulator-row:hover {
+	background: #edf7fa;
+}
+
+.tabulator .tabulator-cell {
+	border-right-color: #edf0f2;
+}
+
+.tabulator .tabulator-footer {
+	border-top-color: var(--line);
+	background: #eef2f4;
+}
+
+@media (max-width: 700px) {
+	header {
+		padding-top: 1.5rem;
+	}
+
+	.heading-row {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.summary {
+		white-space: normal;
+	}
+
+	.filter-note {
+		max-width: 13rem;
+	}
+
+	.tabulator .tabulator-footer .tabulator-footer-contents {
+		display: flex;
+		align-items: center;
+		flex-direction: column;
+		gap: 0.5rem;
+		padding: 0.6rem;
+	}
+
+	.tabulator .tabulator-footer .tabulator-paginator {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.25rem;
+	}
+
+	.tabulator .tabulator-footer .tabulator-page {
+		margin: 0;
+	}
+}

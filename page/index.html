@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Current release and repository status for Axon Ivy Market projects.">
+	<title>Axon Ivy Market Repository Status</title>
+	<link rel="preconnect" href="https://unpkg.com">
+	<link rel="stylesheet" href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css">
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<header>
+		<div class="heading-row">
+			<div>
+				<h1>Market repository status</h1>
+				<p class="subtitle">Release, package, ownership, and policy-file status across Axon Ivy Market repositories.</p>
+			</div>
+			<div id="summary" class="summary" aria-live="polite">Loading repositories...</div>
+		</div>
+	</header>
+
+	<main>
+		<section class="table-shell" aria-label="Market repositories">
+			<div class="table-toolbar">
+				<p class="filter-note">Select a column name to sort. Type below it to filter.</p>
+				<button id="clear-filters" type="button">Clear filters</button>
+			</div>
+			<div id="repository-table">
+				<div class="loading">Loading repository data...</div>
+			</div>
+			<noscript><div class="error">JavaScript is required to display the repository table.</div></noscript>
+		</section>
+	</main>
+
+	<script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+	<script>
+		const tableElement = document.querySelector("#repository-table");
+		const summaryElement = document.querySelector("#summary");
+		const clearFiltersButton = document.querySelector("#clear-filters");
+
+		const isMissing = (value) => value === "None" || String(value).startsWith("MISSING");
+
+		const repositoryFormatter = (cell) => {
+			const link = document.createElement("a");
+			link.className = "repo-link";
+			link.href = `https://github.com/axonivy-market/${encodeURIComponent(cell.getValue())}`;
+			link.target = "_blank";
+			link.rel = "noopener noreferrer";
+			link.textContent = cell.getValue();
+			return link;
+		};
+
+		const statusFormatter = (cell) => {
+			const value = cell.getValue();
+			const status = document.createElement("span");
+			status.className = `status status--${isMissing(value) ? "missing" : "present"}`;
+			status.textContent = value;
+			status.title = value;
+			return status;
+		};
+
+		const dateFormatter = (cell) => {
+			const value = cell.getValue();
+			if (isMissing(value)) {
+				return statusFormatter(cell);
+			}
+			const time = document.createElement("time");
+			time.dateTime = value;
+			time.textContent = new Intl.DateTimeFormat(undefined, {
+				dateStyle: "medium",
+				timeStyle: "short"
+			}).format(new Date(value));
+			time.title = value;
+			return time;
+		};
+
+		const dateSorter = (firstValue, secondValue) => {
+			const firstTime = Date.parse(firstValue);
+			const secondTime = Date.parse(secondValue);
+			if (Number.isNaN(firstTime)) return Number.isNaN(secondTime) ? 0 : -1;
+			if (Number.isNaN(secondTime)) return 1;
+			return firstTime - secondTime;
+		};
+
+		const filterOptions = {
+			headerFilter: "input",
+			headerFilterPlaceholder: "Filter...",
+			headerFilterFunc: "like"
+		};
+
+		fetch("data/market.json")
+			.then((response) => {
+				if (!response.ok) {
+					throw new Error(`Request failed with status ${response.status}`);
+				}
+				return response.json();
+			})
+			.then((data) => {
+				if (!Array.isArray(data.repos)) {
+					throw new Error("The repository list is missing from market.json");
+				}
+
+				tableElement.replaceChildren();
+				const table = new Tabulator(tableElement, {
+					data: data.repos,
+					height: "min(72vh, 780px)",
+					layout: "fitDataStretch",
+					movableColumns: true,
+					pagination: true,
+					paginationSize: 25,
+					paginationSizeSelector: [10, 25, 50, 100],
+					paginationCounter: "rows",
+					initialSort: [{ column: "Repo", dir: "asc" }],
+					columnDefaults: {
+						headerSort: true,
+						headerHozAlign: "left",
+						resizable: true,
+						tooltip: true
+					},
+					columns: [
+						{ title: "Repository", field: "Repo", frozen: true, formatter: repositoryFormatter, minWidth: 210, ...filterOptions },
+						{ title: "Latest tag", field: "Latest_Tag", minWidth: 145, ...filterOptions },
+						{ title: "Latest release", field: "Latest_Release", minWidth: 155, ...filterOptions },
+						{ title: "Latest package", field: "Package Latest", minWidth: 180, formatter: statusFormatter, ...filterOptions },
+						{ title: "Package date", field: "Package Date", minWidth: 190, sorter: dateSorter, formatter: dateFormatter, ...filterOptions },
+						{ title: "Project version", field: "ProjectVersion", minWidth: 150, formatter: statusFormatter, ...filterOptions },
+						{ title: "Code owners", field: "CODE_OWNERS", minWidth: 260, formatter: statusFormatter, ...filterOptions },
+						{ title: "License", field: "LICENSE", minWidth: 145, formatter: statusFormatter, ...filterOptions },
+						{ title: "Security", field: "SECURITY", minWidth: 165, formatter: statusFormatter, ...filterOptions },
+						{ title: "Code of conduct", field: "CODE_OF_CONDUCT", minWidth: 190, formatter: statusFormatter, ...filterOptions }
+					]
+				});
+
+				const updateSummary = (visibleRows = data.repos.length) => {
+					summaryElement.textContent = visibleRows === data.repos.length
+						? `${data.repos.length} repositories`
+						: `${visibleRows} of ${data.repos.length} repositories`;
+				};
+
+				table.on("tableBuilt", () => updateSummary());
+				table.on("dataFiltered", (_filters, rows) => updateSummary(rows.length));
+				clearFiltersButton.addEventListener("click", () => table.clearHeaderFilter());
+			})
+			.catch((error) => {
+				tableElement.innerHTML = `<div class="error">Could not load repository data.<br>${error.message}</div>`;
+				summaryElement.textContent = "Data unavailable";
+				clearFiltersButton.disabled = true;
+			});
+	</script>
+</body>
+</html>

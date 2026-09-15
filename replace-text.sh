@@ -129,6 +129,7 @@ replaceInProduct() {
     --repo "${ORG}/${product}" \
     --base "${branch}" \
     --head "${prBranch}" \
+    --assignee "${GITHUB_ACTOR}" \
     --title "${effectiveCommitMessage}" \
     --body "Text replacement for ${product}."; then
     echo "  ❌ Pull request creation failed"

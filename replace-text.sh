@@ -81,6 +81,7 @@ if [ -z "$products" ]; then
 fi
 
 ORG="axonivy-market"
+prBranch=${PR_BRANCH:-"replace-text/$(date -u +%Y%m%d%H%M%S)-${GITHUB_RUN_ID:-$$}"}
 WORK_DIR=$(mktemp -d -t replace-text-XXXXXX)
 trap "rm -rf ${WORK_DIR}" EXIT
 
@@ -121,19 +122,28 @@ replaceInProduct() {
   echo "  Changed files:"
   git diff --name-only
 
+  local effectiveCommitMessage=${commitMessage:-"Replace text in *.${fileExtension} files"}
+  git switch -c "${prBranch}"
   git add .
-  if [ -z "${commitMessage}" ]; then
-    commitMessage="Replace text in *.${fileExtension} files"
-  fi
-  git commit -m "${commitMessage}"
+  git commit -m "${effectiveCommitMessage}"
   echo "  Commit: $(git log -1 --oneline)"
 
-  if ! git push origin "HEAD:${branch}" 2>/dev/null; then
+  if ! git push origin "HEAD:${prBranch}" 2>/dev/null; then
     echo "  ❌ Push failed"
     return 1
   fi
 
-  echo "  ✓ Replaced and pushed"
+  if ! gh pr create \
+    --repo "${ORG}/${product}" \
+    --base "${branch}" \
+    --head "${prBranch}" \
+    --title "${effectiveCommitMessage}" \
+    --body "Text replacement for ${product}."; then
+    echo "  ❌ Pull request creation failed"
+    return 1
+  fi
+
+  echo "  ✓ Replaced, pushed ${prBranch}, and created pull request"
 }
 
 echo "Replacements:"

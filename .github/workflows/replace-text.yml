@@ -25,9 +25,15 @@ on:
         required: false
         default: ''
         type: string
+      prBranch:
+        description: 'Optional pull request branch name; defaults to a unique generated name'
+        required: false
+        default: ''
+        type: string
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 
 jobs:
@@ -65,3 +71,4 @@ jobs:
         env:
           REPLACEMENTS: ${{ inputs.replacements }}
           COMMIT_MESSAGE: ${{ inputs.commitMessage }}
+          PR_BRANCH: ${{ inputs.prBranch }}

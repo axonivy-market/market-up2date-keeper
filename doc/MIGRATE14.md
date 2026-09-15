@@ -69,12 +69,13 @@ All rest-client connectors that implement an OAuth2 Flow need an additonal depen
 
 ```xml
     <dependency>
-      <groupId>com.axonivy.ivy.spi</groupId>
-      <artifactId>ivy-rest-jersey-spi</artifactId>
+      <groupId>com.axonivy.ivy.api.extension</groupId>
+      <artifactId>ivy-rest-jersey-extension-api</artifactId>
     </dependency>
 ```
+Also the `FeatureConfig` utility namespace + factory method has changed: successor is `ch.ivyteam.ivy.rest.client.feature.FeatureConfig.of(Configuration, Class<?>)`
 
-Reference commit: https://github.com/axonivy-market/S4HANA-connector/pull/33/changes/f9f8c666896a802452b8c065a087c72854f38c0a
+Reference commit: https://github.com/axonivy-market/snowflake-connector/pull/43/changes/920784435880c80985d5139119cedf6b699327ea
 
 ##### Program Extension API
 

@@ -1,0 +1,45 @@
+name: Trigger Release-Build-Dev
+run-name: Release-Build-Dev for ${{ inputs.product || 'all market products' }} ${{ inputs.branches }}
+
+on:
+  schedule:
+    - cron: '0 22 * * 0-5'
+    - cron: '0 22 * * 6'
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'GitHub repository name (e.g. alfresco-connector) or blank for all products of the axonivy-market org'
+        required: false
+        default: ''
+      branches:
+        description: 'Release branches, space separated (e.g. "master dev/14.0") or blank for every release branch'
+        required: false
+        default: ''
+      dryRun:
+        description: 'Build the products without deploying their snapshots'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  dailySchedule: '0 22 * * 0-5'
+  dailyBranches: 'master dev/14.0'
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dispatch release-dev on every release branch
+        env:
+          GH_TOKEN: ${{ secrets.GH }}
+          dryRun: ${{ github.event_name == 'schedule' && 'false' || inputs.dryRun }}
+        run: >
+          ./release-dev-trigger.sh
+          "${{ inputs.product }}"
+          "${{ github.event.schedule == env.dailySchedule && env.dailyBranches || inputs.branches }}"

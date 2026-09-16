@@ -2,23 +2,20 @@
 
 # Release Dev Workflow Creator CLI
 # ================================
-# This script creates pull requests to add a Release-Build-Dev workflow to each
-# repository in the axonivy-market GitHub Organization, targeting each repo's
-# master branch, every "dev/*" branch, release/10.0 and release/12.0 (whichever
-# of those exist for that repo).
-# The release-dev workflow runs a Maven build from the repo root, so a base
+# This script creates pull requests to add a Release-Build-Dev workflow to every
+# release branch of each repository in the axonivy-market GitHub Organization.
+# The nightly run itself is dispatched by trigger-release-dev.yml of
+# market-up2date-keeper, because GitHub only schedules the default branch.
+# The release-dev workflow runs a Maven build from the repo root, so a release
 # branch is only touched if it has a pom.xml at its root; otherwise it's
 # recorded in $skipped_report_file and left alone.
 # Using https://cli.github.com/
 
-org="axonivy-market"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+. ${DIR}/../repo-collector.sh
 
-ignored_repos=(
-  "market-up2date-keeper"
+ignored_repos+=(
   "market.axonivy.com"
-  "market-monitor"
-  "market"
-  "demo-projects"
   "portal"
 )
 
@@ -30,7 +27,7 @@ skipped_report_file="$(pwd)/release-dev-workflow-skipped-no-pom.log"
 
 workflow_file_release_dev=".github/workflows/release-dev.yml"
 
-# Java version used to build each base branch.
+# Java version used to build each release branch.
 java_version_for_base_branch() {
   case "$1" in
     dev/14.0) echo "25" ;;
@@ -41,13 +38,12 @@ java_version_for_base_branch() {
 
 workflow_content_for_base_branch() {
   base_branch=$1
-  java_version=$(java_version_for_base_branch "$base_branch")
 
-  echo "name: Release-Build-Dev
+  cat <<WORKFLOW
+name: Release-Build-Dev
+run-name: Release-Build-Dev \${{ github.ref_name }}\${{ inputs.dryRun && ' (dry run)' || '' }}
 
 on:
-  schedule:
-    - cron: '21 21 * * *'
   workflow_dispatch:
     inputs:
       dryRun:
@@ -65,34 +61,17 @@ jobs:
   release:
     uses: axonivy-market/github-workflows/.github/workflows/release-dev.yml@v6
     with:
-      dryRun: \${{ fromJSON(github.event_name == 'schedule' && 'false' || github.event_name == 'workflow_dispatch' && github.event.inputs.dryRun || 'true') }}
-      javaVersion: ${java_version}
-    secrets: inherit"
-}
-
-githubRepos() {
-  ghApi="orgs/${org}/repos?per_page=100"
-  gh api "${ghApi}"
-}
-
-collectRepos() {
-  githubRepos |
-    jq -r '.[] |
-    select(.archived == false) |
-    select(.is_template == false) |
-    select(.default_branch == "master") |
-    select(.language != null) |
-      .name' | sed 's/\r//g'
+      dryRun: \${{ inputs.dryRun }}
+      javaVersion: $(java_version_for_base_branch "$base_branch")
+    secrets: inherit
+WORKFLOW
 }
 
 collectTargetBaseBranches() {
-  # Static targets, skipped later if they don't exist on the remote.
   echo "master"
+  echo "dev/14.0"
   echo "release/10.0"
   echo "release/12.0"
-
-  # All branches under dev/*
-  git ls-remote --heads origin 'refs/heads/dev/*' | sed 's#.*refs/heads/##'
 }
 
 create_pr_for_base_branch() {
@@ -114,7 +93,7 @@ create_pr_for_base_branch() {
 
   branch_name="feature/${ticket}-add-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
 
-  echo "Processing $repo_name base branch $base_branch (head branch $branch_name)"
+  echo "Processing $repo_name release branch $base_branch (head branch $branch_name)"
 
   if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
     echo "Branch $branch_name already exists, checking it out"
@@ -150,9 +129,6 @@ create_prs_for_repo() {
     return
   fi
 
-  # Ensure repo name has no carriage return characters
-  repo_name=$(echo "$repo_name" | sed 's/\r//g')
-
   git clone "https://github.com/${org}/${repo_name}.git"
   cd "${repo_name}"
 
@@ -173,7 +149,7 @@ main() {
   done
 
   echo ""
-  echo "Matched branches skipped because no pom.xml was found at the repo root:"
+  echo "Release branches skipped because no pom.xml was found at the repo root:"
   if [ -s "$skipped_report_file" ]; then
     cat "$skipped_report_file"
   else

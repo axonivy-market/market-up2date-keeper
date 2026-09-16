@@ -11,10 +11,12 @@ set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
-# repos that never get a release-dev workflow, same list as in jobs/createPrsToAddReleaseDevWorkflow.sh
 ignored_repos+=(
   "market.axonivy.com"
   "portal"
+  "mobileapp"
+  "process-miner-viewer"
+  "octopus-admin-tools"
 )
 
 releaseDevWorkflow="release-dev.yml"

@@ -6,9 +6,6 @@
 # release branch of each repository in the axonivy-market GitHub Organization.
 # The nightly run itself is dispatched by trigger-release-dev.yml of
 # market-up2date-keeper, because GitHub only schedules the default branch.
-# The release-dev workflow runs a Maven build from the repo root, so a release
-# branch is only touched if it has a pom.xml at its root; otherwise it's
-# recorded in $skipped_report_file and left alone.
 # Using https://cli.github.com/
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -17,13 +14,13 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ignored_repos+=(
   "market.axonivy.com"
   "portal"
+  "mobileapp"
+  "process-miner-viewer"
+  "octopus-admin-tools"
 )
 
 ticket="MARP-4636"
 pr_title="${ticket} Add release-dev workflow"
-
-# Absolute path, captured before any "cd" so it stays valid from any function.
-skipped_report_file="$(pwd)/release-dev-workflow-skipped-no-pom.log"
 
 workflow_file_release_dev=".github/workflows/release-dev.yml"
 
@@ -85,12 +82,6 @@ create_pr_for_base_branch() {
 
   git fetch origin "$base_branch"
 
-  if ! git cat-file -e "origin/${base_branch}:pom.xml" 2>/dev/null; then
-    echo "No pom.xml at the root of $repo_name on $base_branch, skipping"
-    echo "${repo_name}  ${base_branch}" >> "$skipped_report_file"
-    return
-  fi
-
   branch_name="feature/${ticket}-add-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
 
   echo "Processing $repo_name release branch $base_branch (head branch $branch_name)"
@@ -141,20 +132,10 @@ create_prs_for_repo() {
 }
 
 main() {
-  : > "$skipped_report_file"
-
   echo "Repositories found:"
   collectRepos | while read -r repo_name; do
     create_prs_for_repo "$repo_name"
   done
-
-  echo ""
-  echo "Release branches skipped because no pom.xml was found at the repo root:"
-  if [ -s "$skipped_report_file" ]; then
-    cat "$skipped_report_file"
-  else
-    echo "(none)"
-  fi
 }
 
 main

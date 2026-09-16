@@ -39,7 +39,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH }}
           dryRun: ${{ github.event_name == 'schedule' && 'false' || inputs.dryRun }}
-        run: >
-          ./release-dev-trigger.sh
-          "${{ inputs.product }}"
-          "${{ github.event.schedule == env.dailySchedule && env.dailyBranches || inputs.branches }}"
+          product: ${{ inputs.product }}
+          branches: ${{ inputs.branches }}
+          schedule: ${{ github.event.schedule }}
+        run: |
+          if [ "$schedule" = "$dailySchedule" ]; then
+            branches="$dailyBranches"
+          fi
+          ./release-dev-trigger.sh "$product" "$branches"

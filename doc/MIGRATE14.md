@@ -107,3 +107,101 @@ Fix: run the project conversion in vscode. Using the command: `ivyProjects.conve
 Reference commits: 
 - https://github.com/axonivy-market/deepl-connector/commit/b98ce8c0fa88f26b22439cbdb555f8524748cb90
 - https://github.com/axonivy-market/a-trust-connector/pull/113/changes/45a13167833d33a4bf231739450fc719e2268c75
+
+##### XHTML validation warnings
+
+The `xhtml` validator checks every `.xhtml` file under `webContent` and `dialog`. It runs by default. A project can turn it off in its `pom.xml`:
+
+```xml
+<excludeValidators>
+  <validator>xhtml</validator>
+</excludeValidators>
+```
+
+To run it anyway for a single build, clear that list:
+
+```
+mvnd -pl <module> -am verify -DskipTests -Divy.validation.excludeValidators=
+```
+
+Findings are reported as `[WARNING] webContent/…/view.xhtml:[line,column] <message>`. A validator can be silenced for the next element, or for the whole file, by naming it (`el-validator` is the one that checks expressions):
+
+```xml
+<!-- disable validator next-line: el-validator -->
+<p:inputText value="#{bean.name}" />
+```
+
+For the whole file, put `<!-- disable validator: el-validator -->` as a top-level comment, before `<html>`. Keep the scope as narrow as possible.
+
+These are static checks: the validator reads the files, it does not run the page. A warning therefore does not automatically mean the page is broken. Some findings concern code that works at runtime (a variable that only exists at runtime, for example), and some are only about correctness, e.g. an attribute that JSF ignores, where the page behaves the same before and after. Others do point at real problems, so read each finding instead of suppressing it by default.
+
+The list below is not exhaustive; it only contains the warnings we hit in our own projects.
+
+###### `Attribute 'x' is not allowed to appear in element 'y'.`
+
+That attribute does not exist on the JSF component, or its name has the wrong case (JSF attribute names are case-sensitive).
+
+- `escape="false"` on `h:inputTextarea`: `h:inputTextarea` has no `escape` attribute, remove it.
+- `onPostBack="false"` on `f:viewAction`: the attribute is named `onPostback`.
+
+Fix by using the component's real attribute name. Do not suppress this warning.
+
+Reference: [remove `escape`](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-4ff6821011205542dfba10b8b48d3aa987844c6fe8eddc8585751d795b408d79R144) · [fix the `onPostback` casing](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-e5daef65e01422aa9a6ba7fbec73b9f785067d674509505a2ed8828fe7238baeR9)
+
+###### `Must have type 'jakarta.el.MethodExpression' but has type 'java.lang.String'`
+
+The attribute expects a method, but the expression resolves to a `String`. Example: `globalFilterFunction="#{threadBean.filter}"` on a bean that has both a `filter` property (getter) and a `filter(…)` method, where the property was used instead of the method.
+
+Rename the method so no property uses its name, e.g. `filter(…)` to `globalFilterFunction(…)`, and reference `#{threadBean.globalFilterFunction}`.
+
+Reference: [rename the method](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-5f636daa442f6d4f25fe09a98d44f2485a018f9e55a58a745a80aa2ef23fd4a9R116) · [use the new name in the view](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-99f1c583a39d58a6330aece58404e849950d70233c19b988e0b32a4c94e269c0R43)
+
+###### `Must have type 'java.lang.Object' but has type 'void'`
+
+An untyped composite component attribute is treated as a value attribute. Passing a `void` method invocation to it is therefore invalid. Do not suppress this warning.
+
+If the callback is part of the composite component's contract, declare it as a method attribute and bind it to the server-side component action or behavior that must invoke it:
+
+```xml
+<cc:attribute name="callback" method-signature="void callback()" required="true" />
+
+<p:commandButton action="#{cc.attrs.callback}" />
+```
+
+Pass the method expression without invoking it:
+
+```xml
+<cc:Example callback="#{bean.callback}" />
+```
+
+If the method belongs to the caller's own action instead, invoke it directly from that action and remove the composite callback attribute. Do not add a callback or bind it to a different lifecycle event merely to silence the validator.
+
+Do not interpolate a callback into client-side JavaScript such as `onclick="#{cc.attrs.callback}"`. That evaluates the expression while rendering the page instead of wiring a server-side callback to the browser event.
+
+###### `Attribute or method 'x' not found`
+
+- The expression is evaluated against a supertype that does not declare the member. Example: a table bound to `AbstractPermission` reads `#{permission.permissionHolder}`, but `getPermissionHolder()` was only declared on `Permission`. Declare it on the base type (`public abstract String getPermissionHolder();`) and implement it in every subclass.
+- If the member intentionally exists only on specific runtime implementations, expose it as a separate typed composite attribute and pass it explicitly from the applicable callers. Do not access a subtype-only member through an attribute declared as the broader type.
+- A `Map` is iterated directly and its entries are read as `.key` / `.value`. Iterate the entry set instead, so each row is a `Map.Entry`: `value="#{bean.additionalProperties.entrySet()}"`.
+
+Reference: [declare `getPermissionHolder()` on the base type](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-5fa0c26ca2d76149144865c1d71706de2cef3507397e79eb28cf95b636fbaf9fR139) · [pass a subtype-only property explicitly](https://github.com/axonivy/engine-cockpit/commit/1587c950c6d0f2d1f9aa764e89096c746c11f426) · [iterate `entrySet()`](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-07f899719637b3ba36753b23ef0a16d027716c3f632d61e4cf807a81036856f6R131)
+
+###### `Managed bean or local variable 'x' not found`
+
+The variable is provided by a surrounding composite component, for example the `app` variable of `cc:ApplicationTabs`. The validator does not know such variables and reports them as missing. Suppress just those expressions:
+
+```xml
+<!-- disable validator next-line: el-validator -->
+<p:dataTable widgetVar="table_#{app.id()}">
+```
+
+Reference: [databases.xhtml](https://github.com/axonivy/engine-cockpit/pull/2088/files#diff-7e80a35e4837908aa78315132c922544de978180c70ba5886fb53f50f1fdfb20R31) · [webservices.xhtml](https://github.com/axonivy/engine-cockpit/pull/2088/files#diff-37b9edc97d23882192ce20c3ea62a90174d31682d1e8ba6c57281e8f54a2d9e8R27) · [restclients.xhtml](https://github.com/axonivy/engine-cockpit/pull/2093/files#diff-152eb7b9495e2a7ec81c9b5f90484d65baa3463406fc75308ca7384e9bd14858R27)
+
+###### Known validator limitations
+
+The XHTML validator is being actively improved. Re-run the validator with the current product version before relying on this list: an entry may already be fixed by the time you read it. The remaining warnings below come from the validator, not from the project. Keep them visible until the validator is fixed; do not change or suppress valid XHTML solely to silence them.
+
+- Java keywords used with dot access, such as `#{cc.attrs.for}`. Axon Ivy deliberately sets `org.apache.el.parser.SKIP_IDENTIFIER_CHECK=true` at runtime to support identifiers such as `case`. The static validator does not currently mirror that runtime configuration and reports a parse warning for expressions that work in the product.
+- `rendered` on composite components (`cc:*`). Workaround that was applied: [ui:fragment wrapper](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-faf381b4fc21927728336ba13fe091fbcc30d5c41862491d448b3aa243bc1aeeR87)
+- `empty` / `not empty` applied to a value whose type is not a `String`, array, `Map`, or `Collection`. The validator rejects this, but the [Jakarta EL specification](https://jakarta.ee/specifications/expression-language/6.0/jakarta-expression-language-spec-6.0#empty-operator-empty-a) defines `empty` as `true` for `null` and `false` for every other value of such a type. Therefore, `not empty date` works as a null check. No correctness fix is required; `date ne null` is an equivalent, clearer expression. Example: [use an explicit null check](https://github.com/axonivy/engine-cockpit/commit/628e3d632a557ff269f54715b135e30aa7655f49)
+- Conditional operator branches with different static types. The validator requires both branches of `condition ? valueIfTrue : valueIfFalse` to have the same type, but the [Jakarta EL specification](https://jakarta.ee/specifications/expression-language/6.0/jakarta-expression-language-spec-6.0#conditional-operator-a-b-c) evaluates and returns only the selected branch without this restriction. If the receiving attribute accepts both types, the expression is valid. Example: [a `String` or `Object` passed to `h:outputText`](https://github.com/axonivy/engine-cockpit/commit/ea268bc629c3c075813b09aed85bb2ae7da58d80)

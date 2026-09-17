@@ -180,7 +180,8 @@ a:focus-visible {
 }
 
 .tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover {
-	background: #e5ebee;
+	color: #241500;
+	background: #f59e0b;
 }
 
 .tabulator .tabulator-header-filter input {
@@ -202,7 +203,13 @@ a:focus-visible {
 }
 
 .tabulator .tabulator-row:hover {
-	background: #edf7fa;
+	background: #fff3cd;
+}
+
+.tabulator .tabulator-row.tabulator-selected,
+.tabulator .tabulator-row.tabulator-selected:hover {
+	color: #241500;
+	background: #f59e0b;
 }
 
 .tabulator .tabulator-cell {

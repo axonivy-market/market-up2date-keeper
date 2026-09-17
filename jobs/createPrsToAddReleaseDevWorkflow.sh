@@ -12,7 +12,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/../repo-collector.sh
 
-# keep in sync with release-dev-trigger.sh, it dispatches exactly these repos
+# keep in sync with release-dev-trigger.sh, it excludes exactly these repos too
 ignored_repos+=(
   "portal"
   "mobileapp"
@@ -66,6 +66,10 @@ jobs:
 WORKFLOW
 }
 
+commits_ahead_of_base_branch() {
+  git rev-list --count "origin/$1..HEAD"
+}
+
 collectTargetBaseBranches() {
   echo "master"
   echo "dev/14.0"
@@ -98,12 +102,14 @@ create_pr_for_base_branch() {
   workflow_content_for_base_branch "$base_branch" > "$workflow_file_release_dev"
   git add "$workflow_file_release_dev"
 
-  if git diff --cached --quiet; then
+  if ! git diff --cached --quiet; then
+    git commit -m "$pr_title"
+  fi
+
+  if [ "$(commits_ahead_of_base_branch "$base_branch")" -eq 0 ]; then
     echo "$repo_name $base_branch is already up to date"
     return
   fi
-
-  git commit -m "$pr_title"
 
   git push origin "$branch_name"
 

@@ -104,13 +104,10 @@
 				tableElement.replaceChildren();
 				const table = new Tabulator(tableElement, {
 					data: data.repos,
-					height: "min(72vh, 780px)",
+					height: "100%",
 					layout: "fitDataStretch",
 					movableColumns: true,
-					pagination: true,
-					paginationSize: 25,
-					paginationSizeSelector: [10, 25, 50, 100],
-					paginationCounter: "rows",
+					pagination: false,
 					initialSort: [{ column: "Repo", dir: "asc" }],
 					columnDefaults: {
 						headerSort: true,

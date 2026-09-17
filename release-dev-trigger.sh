@@ -12,23 +12,27 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
 ignored_repos+=(
-  "market.axonivy.com"
   "portal"
   "mobileapp"
   "process-miner-viewer"
   "octopus-admin-tools"
+  "iis-proxy"
+  "axon-ivy-dev-skills"
 )
 
 releaseDevWorkflow="release-dev.yml"
 releaseBranchPattern='^(master|dev/[0-9]+\.[0-9]+|release/(10|12)\.0)$'
 
-reposWithBranchesQuery='
+releasableProductsQuery='
   query($org: String!, $endCursor: String) {
     organization(login: $org) {
-      repositories(first: 50, after: $endCursor) {
+      repositories(first: 50, after: $endCursor, isArchived: false) {
         pageInfo { hasNextPage endCursor }
         nodes {
           name
+          isTemplate
+          primaryLanguage { name }
+          defaultBranchRef { name }
           refs(refPrefix: "refs/heads/", first: 100) { nodes { name } }
         }
       }
@@ -41,21 +45,21 @@ dryRun="${dryRun:-true}"
 
 report="${GITHUB_STEP_SUMMARY:-/dev/null}"
 
-collectProducts() {
-  collectRepos | grep -vxF "$(printf '%s\n' "${ignored_repos[@]}")"
-}
-
-# every repo of the org together with its branches, in 1 request per 50 repos
-githubReposWithBranches() {
-  gh api graphql --paginate -F org="${org}" -f query="${reposWithBranchesQuery}" |
-    jq -s '[.[].data.organization.repositories.nodes[]] | map({ name, branches: [.refs.nodes[].name] })'
+releasableProductsWithBranches() {
+  gh api graphql --paginate -F org="${org}" -f query="${releasableProductsQuery}" |
+    jq -s --argjson ignoredRepos "$(printf '%s\n' "${ignored_repos[@]}" | jq -Rs 'split("\n")[:-1]')" '
+      [.[].data.organization.repositories.nodes[]] |
+      map(select(.isTemplate == false)) |
+      map(select(.defaultBranchRef.name == "master")) |
+      map(select(.primaryLanguage != null)) |
+      map(select(.name | IN($ignoredRepos[]) | not)) |
+      map({ name, branches: [.refs.nodes[].name] })'
 }
 
 collectTargets() {
-  githubReposWithBranches |
+  releasableProductsWithBranches |
     jq -r --arg releaseBranch "${releaseBranchPattern}" \
-          --argjson products "$(collectProducts | jq -Rs 'split("\n")[:-1]')" \
-      '.[] | select(.name | IN($products[])) | .name as $product |
+      '.[] | .name as $product |
        .branches[] | select(test($releaseBranch)) | "\($product) \(.)"'
 }
 

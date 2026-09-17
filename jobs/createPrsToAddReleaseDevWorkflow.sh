@@ -2,10 +2,11 @@
 
 # Release Dev Workflow Creator CLI
 # ================================
-# This script creates pull requests to add a Release-Build-Dev workflow to every
-# release branch of each repository in the axonivy-market GitHub Organization.
-# The nightly run itself is dispatched by trigger-release-dev.yml of
-# market-up2date-keeper, because GitHub only schedules the default branch.
+# This script creates pull requests to add or update the Release-Build-Dev
+# workflow on every release branch of each repository in the axonivy-market
+# GitHub Organization. The nightly run itself is dispatched by
+# trigger-release-dev.yml of market-up2date-keeper, because GitHub only
+# schedules the default branch.
 # Using https://cli.github.com/
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -13,19 +14,19 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # keep in sync with release-dev-trigger.sh, it dispatches exactly these repos
 ignored_repos+=(
-  "market.axonivy.com"
   "portal"
   "mobileapp"
   "process-miner-viewer"
   "octopus-admin-tools"
+  "iis-proxy"
+  "axon-ivy-dev-skills"
 )
 
 ticket="MARP-4636"
-pr_title="${ticket} Add release-dev workflow"
+pr_title="${ticket} Update release-dev workflow"
 
 workflow_file_release_dev=".github/workflows/release-dev.yml"
 
-# Java version used to build each release branch.
 java_version_for_base_branch() {
   case "$1" in
     dev/14.0) echo "25" ;;
@@ -76,16 +77,16 @@ create_pr_for_base_branch() {
   base_branch=$1
   repo_name=$2
 
-  if ! git ls-remote --heads origin "$base_branch" | grep -q "$base_branch"; then
+  if ! git ls-remote --heads origin "$base_branch" | grep -q "refs/heads/$base_branch$"; then
     echo "Base branch '$base_branch' does not exist in $repo_name, skipping"
     return
   fi
 
-  branch_name="feature/${ticket}-add-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
+  branch_name="feature/${ticket}-update-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
 
   echo "Processing $repo_name release branch $base_branch (head branch $branch_name)"
 
-  if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
+  if git ls-remote --heads origin "$branch_name" | grep -q "refs/heads/$branch_name$"; then
     echo "Branch $branch_name already exists, checking it out"
     git fetch origin "$branch_name"
     git checkout "$branch_name"
@@ -96,6 +97,12 @@ create_pr_for_base_branch() {
   mkdir -p .github/workflows
   workflow_content_for_base_branch "$base_branch" > "$workflow_file_release_dev"
   git add "$workflow_file_release_dev"
+
+  if git diff --cached --quiet; then
+    echo "$repo_name $base_branch is already up to date"
+    return
+  fi
+
   git commit -m "$pr_title"
 
   git push origin "$branch_name"
@@ -104,7 +111,7 @@ create_pr_for_base_branch() {
 
   if [ -z "$pr_id" ]; then
     echo "Creating a pull request into $base_branch"
-    gh pr create --title "$pr_title" --body "This PR adds the Release-Build-Dev workflow to the repository." --base "$base_branch" --head "$branch_name"
+    gh pr create --title "$pr_title" --body "This PR updates the Release-Build-Dev workflow of the repository." --base "$base_branch" --head "$branch_name"
   else
     echo "Pull request already exists for branch $branch_name into $base_branch"
   fi

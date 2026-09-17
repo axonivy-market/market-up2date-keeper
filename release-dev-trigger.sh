@@ -11,14 +11,7 @@ set -euo pipefail
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/repo-collector.sh
 
-ignored_repos+=(
-  "portal"
-  "mobileapp"
-  "process-miner-viewer"
-  "octopus-admin-tools"
-  "iis-proxy"
-  "axon-ivy-dev-skills"
-)
+ignored_repos+=("${release_dev_ignored_repos[@]}")
 
 releaseDevWorkflow="release-dev.yml"
 releaseBranchPattern='^(master|dev/[0-9]+\.[0-9]+|release/(10|12)\.0)$'

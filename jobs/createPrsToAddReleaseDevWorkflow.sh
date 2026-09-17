@@ -12,15 +12,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/../repo-collector.sh
 
-# keep in sync with release-dev-trigger.sh, it excludes exactly these repos too
-ignored_repos+=(
-  "portal"
-  "mobileapp"
-  "process-miner-viewer"
-  "octopus-admin-tools"
-  "iis-proxy"
-  "axon-ivy-dev-skills"
-)
+ignored_repos+=("${release_dev_ignored_repos[@]}")
 
 ticket="MARP-4636"
 pr_title="${ticket} Update release-dev workflow"

@@ -8,6 +8,15 @@ ignored_repos=(
   "github-repo-manager"
 )
 
+release_dev_ignored_repos=(
+  "portal"
+  "mobileapp"
+  "process-miner-viewer"
+  "octopus-admin-tools"
+  "iis-proxy"
+  "axon-ivy-dev-skills"
+)
+
 # GitHub organization to work on
 # For testing, please use a personal org
 org=axonivy-market

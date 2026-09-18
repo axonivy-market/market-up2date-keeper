@@ -2,32 +2,23 @@
 
 # Release Dev Workflow Creator CLI
 # ================================
-# This script creates pull requests to add a Release-Build-Dev workflow to every
-# release branch of each repository in the axonivy-market GitHub Organization.
-# The nightly run itself is dispatched by trigger-release-dev.yml of
-# market-up2date-keeper, because GitHub only schedules the default branch.
-# The release-dev workflow runs a Maven build from the repo root, so a release
-# branch is only touched if it has a pom.xml at its root; otherwise it's
-# recorded in $skipped_report_file and left alone.
+# This script creates pull requests to add or update the Release-Build-Dev
+# workflow on every release branch of each repository in the axonivy-market
+# GitHub Organization. The nightly run itself is dispatched by
+# trigger-release-dev.yml of market-up2date-keeper, because GitHub only
+# schedules the default branch.
 # Using https://cli.github.com/
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . ${DIR}/../repo-collector.sh
 
-ignored_repos+=(
-  "market.axonivy.com"
-  "portal"
-)
+ignored_repos+=("${release_dev_ignored_repos[@]}")
 
 ticket="MARP-4636"
-pr_title="${ticket} Add release-dev workflow"
-
-# Absolute path, captured before any "cd" so it stays valid from any function.
-skipped_report_file="$(pwd)/release-dev-workflow-skipped-no-pom.log"
+pr_title="${ticket} Update release-dev workflow"
 
 workflow_file_release_dev=".github/workflows/release-dev.yml"
 
-# Java version used to build each release branch.
 java_version_for_base_branch() {
   case "$1" in
     dev/14.0) echo "25" ;;
@@ -67,6 +58,10 @@ jobs:
 WORKFLOW
 }
 
+commits_ahead_of_base_branch() {
+  git rev-list --count "origin/$1..HEAD"
+}
+
 collectTargetBaseBranches() {
   echo "master"
   echo "dev/14.0"
@@ -78,24 +73,16 @@ create_pr_for_base_branch() {
   base_branch=$1
   repo_name=$2
 
-  if ! git ls-remote --heads origin "$base_branch" | grep -q "$base_branch"; then
+  if ! git ls-remote --heads origin "$base_branch" | grep -q "refs/heads/$base_branch$"; then
     echo "Base branch '$base_branch' does not exist in $repo_name, skipping"
     return
   fi
 
-  git fetch origin "$base_branch"
-
-  if ! git cat-file -e "origin/${base_branch}:pom.xml" 2>/dev/null; then
-    echo "No pom.xml at the root of $repo_name on $base_branch, skipping"
-    echo "${repo_name}  ${base_branch}" >> "$skipped_report_file"
-    return
-  fi
-
-  branch_name="feature/${ticket}-add-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
+  branch_name="feature/${ticket}-update-release-dev-workflow-$(echo "$base_branch" | tr '/' '-')"
 
   echo "Processing $repo_name release branch $base_branch (head branch $branch_name)"
 
-  if git ls-remote --heads origin "$branch_name" | grep -q "$branch_name"; then
+  if git ls-remote --heads origin "$branch_name" | grep -q "refs/heads/$branch_name$"; then
     echo "Branch $branch_name already exists, checking it out"
     git fetch origin "$branch_name"
     git checkout "$branch_name"
@@ -106,7 +93,15 @@ create_pr_for_base_branch() {
   mkdir -p .github/workflows
   workflow_content_for_base_branch "$base_branch" > "$workflow_file_release_dev"
   git add "$workflow_file_release_dev"
-  git commit -m "$pr_title"
+
+  if ! git diff --cached --quiet; then
+    git commit -m "$pr_title"
+  fi
+
+  if [ "$(commits_ahead_of_base_branch "$base_branch")" -eq 0 ]; then
+    echo "$repo_name $base_branch is already up to date"
+    return
+  fi
 
   git push origin "$branch_name"
 
@@ -114,7 +109,7 @@ create_pr_for_base_branch() {
 
   if [ -z "$pr_id" ]; then
     echo "Creating a pull request into $base_branch"
-    gh pr create --title "$pr_title" --body "This PR adds the Release-Build-Dev workflow to the repository." --base "$base_branch" --head "$branch_name"
+    gh pr create --title "$pr_title" --body "This PR updates the Release-Build-Dev workflow of the repository." --base "$base_branch" --head "$branch_name"
   else
     echo "Pull request already exists for branch $branch_name into $base_branch"
   fi
@@ -141,20 +136,10 @@ create_prs_for_repo() {
 }
 
 main() {
-  : > "$skipped_report_file"
-
   echo "Repositories found:"
   collectRepos | while read -r repo_name; do
     create_prs_for_repo "$repo_name"
   done
-
-  echo ""
-  echo "Release branches skipped because no pom.xml was found at the repo root:"
-  if [ -s "$skipped_report_file" ]; then
-    cat "$skipped_report_file"
-  else
-    echo "(none)"
-  fi
 }
 
 main

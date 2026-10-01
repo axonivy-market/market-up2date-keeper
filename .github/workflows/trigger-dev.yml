@@ -4,10 +4,6 @@ run-name: Dev-Build for ${{ inputs.product || 'all market products' }} ${{ input
 on:
   schedule:
     - cron: '30 21 * * *'
-  # TODO MARP-4823: temporary, to test by committing; remove before merging to master
-  push:
-    branches:
-      - feature/MARP-4823-schedule-triggering-dev-yml-on-branch-dev-14
   workflow_dispatch:
     inputs:
       product:

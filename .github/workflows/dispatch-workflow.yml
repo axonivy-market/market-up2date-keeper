@@ -24,7 +24,7 @@ on:
         type: string
         default: ''
       branches:
-        description: 'Branches, space separated, or "all" of a manual run; overrides the scheduled branches'
+        description: 'Branches, space separated, or "all" for a manual run; overrides the scheduled branches'
         type: string
         default: ''
       workflowInputs:

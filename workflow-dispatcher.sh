@@ -84,10 +84,6 @@ dispatchPayload() {
     '{ ref: $ref } + if $inputs == {} then {} else { inputs: $inputs } end'
 }
 
-isMissingWorkflow() {
-  [[ "$1" == *"(HTTP 404)"* ]]
-}
-
 dispatchStatus() {
   product=$1
   branch=$2
@@ -95,8 +91,6 @@ dispatchStatus() {
   if error=$(dispatchPayload "${branch}" |
       gh api --method POST "repos/${org}/${product}/actions/workflows/${workflow}/dispatches" --input - 2>&1 > /dev/null); then
     echo "ok"
-  elif isMissingWorkflow "${error}"; then
-    echo "skipped"
   else
     echo "${error}" >&2
     echo "failed"

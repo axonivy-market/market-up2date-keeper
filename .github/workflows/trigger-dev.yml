@@ -1,0 +1,29 @@
+name: Trigger Dev-Build
+run-name: Dev-Build for ${{ inputs.product || 'all market products' }} ${{ inputs.branches }}
+
+on:
+  schedule:
+    - cron: '30 21 * * *'
+  workflow_dispatch:
+    inputs:
+      product:
+        description: 'GitHub repository name (e.g. alfresco-connector) or blank for all products of the axonivy-market org'
+        required: false
+        default: ''
+      branches:
+        description: 'Branches, space separated (e.g. "dev/14.0"), "all" for every release branch or blank for the daily branches'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    uses: ./.github/workflows/dispatch-workflow.yml
+    secrets: inherit
+    with:
+      workflow: dev.yml
+      dailyBranches: 'dev/14.0'
+      product: ${{ inputs.product }}
+      branches: ${{ inputs.branches }}

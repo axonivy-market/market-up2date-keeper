@@ -1,0 +1,81 @@
+name: Dispatch Workflow
+
+on:
+  workflow_call:
+    inputs:
+      workflow:
+        description: 'Workflow file of the products to dispatch (e.g. dev.yml)'
+        type: string
+        required: true
+      dailyBranches:
+        description: 'Branches, space separated, or "all" for the daily cron and a manual run without branches'
+        type: string
+        required: true
+      weeklyCron:
+        description: 'Cron of the weekly run, which dispatches weeklyBranches instead of dailyBranches'
+        type: string
+        default: ''
+      weeklyBranches:
+        description: 'Branches, space separated, or "all" for the weekly cron'
+        type: string
+        default: ''
+      product:
+        description: 'GitHub repository name or blank for all products of the axonivy-market org'
+        type: string
+        default: ''
+      branches:
+        description: 'Branches, space separated, or "all" for a manual run; overrides the scheduled branches'
+        type: string
+        default: ''
+      workflowInputs:
+        description: 'Inputs of the dispatched workflow as space separated key=value pairs (e.g. dryRun=false)'
+        type: string
+        default: ''
+      extraIgnoredRepoList:
+        description: 'Name of a repo list of repo-collector.sh to skip on top of ignored_repos (e.g. release_dev_ignored_repos)'
+        type: string
+        default: ''
+    secrets:
+      GH:
+        required: true
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dispatch ${{ inputs.workflow }}
+        env:
+          GH_TOKEN: ${{ secrets.GH }}
+          workflow: ${{ inputs.workflow }}
+          dailyBranches: ${{ inputs.dailyBranches }}
+          weeklyCron: ${{ inputs.weeklyCron }}
+          weeklyBranches: ${{ inputs.weeklyBranches }}
+          product: ${{ inputs.product }}
+          manualBranches: ${{ inputs.branches }}
+          workflowInputs: ${{ inputs.workflowInputs }}
+          extraIgnoredRepoList: ${{ inputs.extraIgnoredRepoList }}
+          firedCron: ${{ github.event.schedule }}
+        run: |
+          if [ "${weeklyCron:+set}" != "${weeklyBranches:+set}" ]; then
+            echo "weeklyCron and weeklyBranches go together, got '$weeklyCron' and '$weeklyBranches'"
+            exit 1
+          fi
+
+          isWeeklyRun() {
+            [ -n "$weeklyCron" ] && [ "$firedCron" = "$weeklyCron" ]
+          }
+
+          selectedBranches() {
+            if [ -n "$manualBranches" ]; then
+              echo "$manualBranches"
+            elif isWeeklyRun; then
+              echo "$weeklyBranches"
+            else
+              echo "$dailyBranches"
+            fi
+          }
+
+          ./workflow-dispatcher.sh "$workflow" "$product" "$(selectedBranches)" $workflowInputs

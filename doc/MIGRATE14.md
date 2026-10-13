@@ -1,9 +1,11 @@
-# Migrating to 14.0.0-m33
+# Migrating to 14.0.0
 
-Migrating market products on dev/14.0.0 to the latest milestone 14.0.0-m33-SNAPSHOT.
+Migrating market products on dev/14.0.0 to 14.0.0.
 
 ## Automated
-Most migration steps are done automatically, but running the raise-all-market-products.sh pipeline. 
+Most migration steps are done automatically.
+Run the project migration (Designer Command or EngineConfigCli).
+In the market we raise by running the raise-all-market-products.sh pipeline. 
 
 > ⚠️ Please do not run project conversion by other means. Automatic changes are easier to review and to be trusted.
 

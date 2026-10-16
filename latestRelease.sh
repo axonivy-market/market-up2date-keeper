@@ -4,7 +4,7 @@
 #
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-branch="${1:-master}"
+BRANCH="${1:-master}"
 repoToCheck="${2:-}"
 
 . "${DIR}/repo-collector.sh"
@@ -36,14 +36,14 @@ showLatestRelease() {
 
 showProjectVersion() {
   repo="$1"
-  projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${branch}" -f recursive=1 2> /dev/null |
+  projectPath=$(gh api --method GET "repos/${org}/${repo}/git/trees/${BRANCH}" -f recursive=1 2> /dev/null |
     jq -r '[(.tree // [])[] | select(.path == ".ivyproject" or (.path | endswith("/.ivyproject")))][0].path // empty')
   if [ -z "$projectPath" ]; then
     echo "MISSING"
     return
   fi
 
-  projectContent=$(gh api --method GET "repos/${org}/${repo}/contents/${projectPath}" -f "ref=${branch}" 2> /dev/null |
+  projectContent=$(gh api --method GET "repos/${org}/${repo}/contents/${projectPath}" -f "ref=${BRANCH}" 2> /dev/null |
     jq -r '.content // "missing"')
   if [ "$projectContent" = "missing" ]; then
     echo "MISSING"
@@ -75,8 +75,9 @@ showPackageLatest() {
 
 checkFileStatus() {
   repo="$1"
-  readContent="$2"
-  shift 2
+  branch="$2"
+  readContent="$3"
+  shift 3
   filePaths=("$@")
   for path in "${filePaths[@]}"; do
     fileStatus=$(gh api --method GET "repos/${org}/${repo}/contents/${path}" -f "ref=${branch}" 2> /dev/null | jq -r '.content // "missing"')
@@ -94,11 +95,11 @@ checkFileStatus() {
 
 checkRequiredFiles() {
   repo="$1"
-  codeowners=$(checkFileStatus "$repo" "true" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
+  codeowners=$(checkFileStatus "$repo" "master" "true" ".github/CODEOWNERS" "CODEOWNERS" "docs/CODEOWNERS")
   # Check other files
-  licenseStatus=$(checkFileStatus "$repo" "false" "LICENSE")
-  securityStatus=$(checkFileStatus "$repo" "false" "SECURITY.md")
-  codeOfConductStatus=$(checkFileStatus "$repo" "false" "CODE_OF_CONDUCT.md")
+  licenseStatus=$(checkFileStatus "$repo" "$BRANCH" "false" "LICENSE")
+  securityStatus=$(checkFileStatus "$repo" "$BRANCH" "false" "SECURITY.md")
+  codeOfConductStatus=$(checkFileStatus "$repo" "$BRANCH" "false" "CODE_OF_CONDUCT.md")
   jq -c -n \
     --arg codeowners "$codeowners" \
     --arg licenseStatus "$licenseStatus" \

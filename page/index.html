@@ -51,6 +51,8 @@
 			return link;
 		};
 
+		const focusedFormatter = (cell) => cell.getValue() === true ? "Yes" : "No";
+
 		const statusFormatter = (cell) => {
 			const value = cell.getValue();
 			const status = document.createElement("span");
@@ -117,6 +119,7 @@
 					},
 					columns: [
 						{ title: "Repository", field: "Repo", frozen: true, formatter: repositoryFormatter, minWidth: 210, ...filterOptions },
+						{ title: "Focused", field: "Focused", minWidth: 100, formatter: focusedFormatter, ...filterOptions },
 						{ title: "Latest tag", field: "Latest_Tag", minWidth: 145, ...filterOptions },
 						{ title: "Latest release", field: "Latest_Release", minWidth: 155, ...filterOptions },
 						{ title: "Latest package", field: "Package Latest", minWidth: 180, formatter: statusFormatter, ...filterOptions },

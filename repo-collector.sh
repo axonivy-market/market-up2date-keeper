@@ -17,6 +17,21 @@ release_dev_ignored_repos=(
   "axon-ivy-dev-skills"
 )
 
+focused_repos=(
+  "smart-workflow"
+  "persistence-utils"
+  "docuware-connector"
+  "doc-factory"
+  "portal"
+  "pattern-demos"
+  "msgraph-connector"
+  "idp-utils"
+  "docusign-connector"
+  "deepl-connector"
+  "db-utils"
+  "mailstore-utils"
+)
+
 # GitHub organization to work on
 # For testing, please use a personal org
 org=axonivy-market

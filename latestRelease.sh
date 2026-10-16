@@ -113,12 +113,20 @@ showLatestReleaseAndRequiredFileStatus() {
   latestReleaseData=$(showLatestRelease "$repo")
   projectVersion=$(showProjectVersion "$repo")
   fileStatuses=$(checkRequiredFiles "$repo")
+  focused=false
+  for focusedRepo in "${focused_repos[@]}"; do
+    if [ "$repo" = "$focusedRepo" ]; then
+      focused=true
+      break
+    fi
+  done
   jq -c -n \
     --arg repo "$repo" \
+    --argjson focused "$focused" \
     --arg projectVersion "$projectVersion" \
     --argjson latestReleaseData "$latestReleaseData" \
     --argjson fileStatuses "$fileStatuses" \
-    '{"Repo": $repo} + $latestReleaseData + {"ProjectVersion": $projectVersion} + $fileStatuses'
+    '{"Repo": $repo, "Focused": $focused} + $latestReleaseData + {"ProjectVersion": $projectVersion} + $fileStatuses'
 }
 
 latestReposJSON() {

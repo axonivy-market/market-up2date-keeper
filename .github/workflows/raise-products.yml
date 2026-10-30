@@ -75,9 +75,11 @@ jobs:
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
           export migrationBranch=${{ inputs.migrationBranch }}
           export targetBranch=${{ inputs.targetBranch }}
-          export workflowsTag=${{ inputs.githubWorkflowsTag }}
+          export workflowsTag="$WORKFLOWS_TAG"
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
+        env:
+          WORKFLOWS_TAG: ${{ inputs.githubWorkflowsTag }}
         shell: bash
 
       - name: Show migrated repositories

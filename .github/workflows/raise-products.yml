@@ -70,16 +70,22 @@ jobs:
           GH_TOKEN2: ${{ secrets.GH }}
 
       - name: Raise Products
+        env:
+          ENGINE_URL: ${{ inputs.engineUrl }}
+          RELEASE_BRANCH: ${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
+          MIGRATION_BRANCH: ${{ inputs.migrationBranch }}
+          TARGET_BRANCH: ${{ inputs.targetBranch }}
+          WORKFLOWS_TAG: ${{ inputs.githubWorkflowsTag }}
+          VERSION: ${{ inputs.version }}
+          PRODUCT: ${{ inputs.product }}
         run: |
-          export engineUrl=${{ inputs.engineUrl }}
-          export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
-          export migrationBranch=${{ inputs.migrationBranch }}
-          export targetBranch=${{ inputs.targetBranch }}
+          export engineUrl="$ENGINE_URL"
+          export releaseBranch="$RELEASE_BRANCH"
+          export migrationBranch="$MIGRATION_BRANCH"
+          export targetBranch="$TARGET_BRANCH"
           export workflowsTag="$WORKFLOWS_TAG"
           echo "workDir=$(pwd)" >> $GITHUB_ENV
-          ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
-        env:
-          WORKFLOWS_TAG: ${{ inputs.githubWorkflowsTag }}
+          ./raise-all-market-products.sh "$VERSION" "$PRODUCT"
         shell: bash
 
       - name: Show migrated repositories

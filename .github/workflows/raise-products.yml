@@ -37,6 +37,10 @@ on:
         description: 'Java version to use for the migration (e.g. "25")'
         required: false
         default: '25'
+      githubWorkflowsTag:
+        description: 'Tag of the axonivy-market/github-workflows reusable workflows to pin in every workflow file of the product repositories (e.g. "v6"). If empty, the current tags are kept.'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -71,8 +75,11 @@ jobs:
           export releaseBranch=${{ inputs.createReleaseBranch == true && inputs.releaseBranch || '' }}
           export migrationBranch=${{ inputs.migrationBranch }}
           export targetBranch=${{ inputs.targetBranch }}
+          export workflowsTag="$WORKFLOWS_TAG"
           echo "workDir=$(pwd)" >> $GITHUB_ENV
           ./raise-all-market-products.sh ${{ inputs.version }} ${{ inputs.product }}
+        env:
+          WORKFLOWS_TAG: ${{ inputs.githubWorkflowsTag }}
         shell: bash
 
       - name: Show migrated repositories

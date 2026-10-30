@@ -35,10 +35,13 @@ commitChanges() {
 }
 
 updateActions() {
-  tag="v6"
-  updateWorkflows "${tag}"
+  if [ -z "$workflowsTag" ]; then
+    echo "No workflows tag given, keeping the current workflow tags"
+    return
+  fi
+  updateWorkflows "${workflowsTag}"
   git add .
-  git commit -m "CI: Update workflow actions to ${tag}"
+  git commit -m "CI: Update workflow actions to ${workflowsTag}"
 }
 
 createReleaseBranch() {

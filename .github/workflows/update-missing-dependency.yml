@@ -61,13 +61,21 @@ jobs:
           GH_TOKEN2: ${{ secrets.GH }}
 
       - name: Update dependency using script
+        env:
+          PRODUCT: ${{ inputs.product }}
+          BRANCH: ${{ inputs.branch }}
+          MODULE: ${{ inputs.module }}
+          GROUP_ID: ${{ inputs.groupId }}
+          ARTIFACT_ID: ${{ inputs.artifactId }}
+          VERSION: ${{ inputs.version }}
+          SCOPE: ${{ inputs.scope }}
         run: |
           chmod +x update-dependency.sh
           ./update-dependency.sh \
-            "${{ inputs.product }}" \
-            "${{ inputs.branch }}" \
-            "${{ inputs.module }}" \
-            "${{ inputs.groupId }}" \
-            "${{ inputs.artifactId }}" \
-            "${{ inputs.version }}" \
-            "${{ inputs.scope }}"
+            "$PRODUCT" \
+            "$BRANCH" \
+            "$MODULE" \
+            "$GROUP_ID" \
+            "$ARTIFACT_ID" \
+            "$VERSION" \
+            "$SCOPE"

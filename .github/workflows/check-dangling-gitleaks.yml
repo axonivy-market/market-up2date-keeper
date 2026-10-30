@@ -31,9 +31,16 @@ jobs:
 
       - name: Prepare inputs
         id: prep
+        env:
+          WORKING_ORGS: ${{ github.event.inputs.workingOrgs || 'axonivy-market' }}
+          WORKING_REPOS: ${{ github.event.inputs.workingRepos || '' }}
         run: |
-          echo "ORGS=${{ github.event.inputs.workingOrgs || 'axonivy-market' }}" >> $GITHUB_ENV
-          echo "REPOS=${{ github.event.inputs.workingRepos || '' }}" >> $GITHUB_ENV
+          # GITHUB_ENV takes NAME=value lines; a line break in an input would define extra variables.
+          if [[ "$WORKING_ORGS" == *$'\n'* || "$WORKING_REPOS" == *$'\n'* ]]; then
+            echo "::error::workingOrgs and workingRepos must not contain line breaks"
+            exit 1
+          fi
+          printf 'ORGS=%s\nREPOS=%s\n' "$WORKING_ORGS" "$WORKING_REPOS" >> "$GITHUB_ENV"
 
       - name: Run Gitleaks scanning
         run: |

@@ -119,6 +119,9 @@ Reference commit: https://github.com/axonivy-market/deepl-connector/commit/7039b
 
 #### Low Priority
 
+##### Project metadata
+Remove `.project` and `.factorypath` files from all project modules.
+
 ##### Java warnings
 Fix warnings that fail the pipeline: remove unused imports, inline Javadoc-only imports, and replace unused lambda parameters with `_` where the current Java level allows it.
 

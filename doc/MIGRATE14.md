@@ -117,6 +117,9 @@ Remove custom `build-helper-maven-plugin` executions that add `src_generated/res
 
 Reference commit: https://github.com/axonivy-market/deepl-connector/commit/7039b6ff9553c4c27a108ee8c78fbcf5bc9bc5d5
 
+##### Path API
+Replace the constructor of ch.ivyteam.ivy.workflow.document.Path `new Path(String)` by `Path.of(String)`
+
 #### Low Priority
 
 ##### Java warnings
@@ -172,6 +175,16 @@ That attribute does not exist on the JSF component, or its name has the wrong ca
 Fix by using the component's real attribute name. Do not suppress this warning.
 
 Reference: [remove `escape`](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-4ff6821011205542dfba10b8b48d3aa987844c6fe8eddc8585751d795b408d79R144) · [fix the `onPostback` casing](https://github.com/axonivy/engine-cockpit/pull/2129/files#diff-e5daef65e01422aa9a6ba7fbec73b9f785067d674509505a2ed8828fe7238baeR9)
+
+###### `Attribute 'fileLimit' / 'allowTypes' is not allowed to appear in element 'p:fileUpload'.`
+
+PrimeFaces 15 moved `fileLimit` and `allowTypes` from `p:fileUpload` to its child `p:validateFile`, which enforces them on the server. Do not delete them: that silently drops the check.
+
+```xhtml
+<p:fileUpload ... accept=".pdf">
+    <p:validateFile allowTypes="/(\.|\/)(pdf)$/" fileLimit="1" />
+</p:fileUpload>
+```
 
 ###### `Must have type 'jakarta.el.MethodExpression' but has type 'java.lang.String'`
 
